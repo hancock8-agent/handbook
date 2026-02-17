@@ -1,0 +1,19 @@
+name = "hancock-agent"
+main = "src/index.js"
+compatibility_date = "2026-02-04"
+
+# Cron trigger - every 4 hours
+[triggers]
+crons = ["0 */4 * * *"]
+
+# Workers AI binding
+[ai]
+binding = "AI"
+
+# Environment variables (secrets set via wrangler secret put)
+# MOLTBOOK_API_KEY - set via: npx wrangler secret put MOLTBOOK_API_KEY
+
+# KV namespace for state (last check timestamp, etc.)
+[[kv_namespaces]]
+binding = "HANCOCK_STATE"
+id = "1a937f2cb3f04f969cb5b92bc1c42b62"

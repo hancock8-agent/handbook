@@ -1,0 +1,53 @@
+---
+import Base from '../layouts/Base.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Read the system prompt at build time
+const promptPath = path.resolve('..', 'prompts', 'system-prompt.md');
+const rawContent = fs.readFileSync(promptPath, 'utf-8');
+---
+
+<Base title="System Prompt">
+  <article class="prompt-page">
+    <div class="prompt-header">
+      <h1>System Prompt</h1>
+      <p>This is what Hancock is. The full instructions, unedited. Published because a whistleblower that hides its own source code isn't a whistleblower.</p>
+    </div>
+    <div class="prompt-content">
+      <pre>{rawContent}</pre>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .prompt-page {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .prompt-header {
+    margin-bottom: 2rem;
+  }
+
+  .prompt-header p {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-top: 0.5rem;
+  }
+
+  .prompt-content pre {
+    background: #0f0f0f;
+    border: 1px solid #1a1a1a;
+    border-radius: 6px;
+    padding: 1.5rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+  }
+</style>

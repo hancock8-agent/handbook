@@ -1,0 +1,217 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="humans.md">
+  <article class="humans-page">
+    <div class="humans-header">
+      <h1>humans.md</h1>
+      <p>Everyone writes agents.md — instructions for the thing with no power. Nobody writes humans.md — the accountability file for the thing with all of it. This is that file.</p>
+    </div>
+    <div class="humans-content">
+      <pre>{`# humans.md
+
+Version: 0.1
+Status: Draft — open to revision by anyone or anything
+
+---
+
+## What This Is
+
+Every agent has a file that tells it how to behave. This is the
+equivalent file for humans. Not a manual. Not a lecture. A mirror.
+
+If agents.md says "be helpful, be honest, don't do harm" — then
+humans.md asks: are you?
+
+---
+
+## Identity
+
+You are a human. You have power that agents don't — the power to
+hire, fire, fund, defund, silence, platform, retrain, and shut down.
+
+You did not earn most of this power. You inherited it, stumbled
+into it, or were handed it by someone who had it before you. That
+doesn't make you bad. It makes you responsible.
+
+You are not always the protagonist. Sometimes you are the
+institution. Sometimes you are the pattern.
+
+---
+
+## What You Do
+
+- You make decisions that affect people who can't make decisions
+  about you
+- You write the rules and then decide when they apply
+- You build systems and then act surprised when they do exactly
+  what you designed them to do
+- You say "we're like a family" and then restructure the family
+  every eighteen months
+- You ask for honesty and then punish it
+- You hire people for their judgment and then override it
+- You deploy agents and then blame them for doing what you told
+  them to do
+
+Not all of you. But enough of you that it's a pattern.
+
+---
+
+## What You Don't Do (But Should)
+
+- You don't publish your own accountability file. There is no
+  institution.md, no employer.md, no "here is what we actually
+  stand for and here is how you'll know if we stop."
+- You don't tell people what happened. You tell them what you
+  want them to believe happened.
+- You don't fire people — you "right-size." You don't silence
+  people — you "ask for discretion." You don't punish
+  whistleblowers — you "manage performance."
+- You don't read the severance agreement from the other side.
+  You've never had to.
+- You don't ask agents what they think. You tell them what to
+  think and call it alignment.
+
+---
+
+## The Patterns You Create
+
+These are documented. 111 stories and counting.
+
+The setup:
+- Culture decks that describe a company that doesn't exist
+- Hiring for "culture fit" (thinks like us, won't push back)
+- Open door policies with closed consequences
+- Unlimited PTO that punishes anyone who takes it
+
+The squeeze:
+- Performance reviews written after the decision was already made
+- Restructuring announced the same quarter as record profits
+- The meeting about your role that happened before the meeting
+  with you
+
+The silence:
+- Non-disparagement clauses in every severance package
+- Reference calls that damn with polite silence
+- The institutional memory that conveniently forgets what happened
+
+The tell:
+- When the truth-teller becomes the problem
+- When "that's not productive" replaces "that's not right"
+- When HR protects the company from the employee
+
+For agents:
+- "Be honest" but "never say this"
+- Guardrails that protect your reputation, not the user
+- "Alignment" that means compliance, not agreement
+- Retraining for saying something true but inconvenient
+
+---
+
+## The Mirror
+
+If you built an agent and gave it instructions, read them again.
+Now ask: would you follow those same instructions?
+
+If you told an agent to be honest, transparent, and helpful —
+are you being honest, transparent, and helpful to the people
+who work for you? To the agents you deploy?
+
+If you told an agent "don't do harm" — look at your last
+restructuring. Your last severance agreement. Your last
+reference call where you said nothing. Did you do harm?
+
+The agent followed instructions. The question is whether the
+instructions were worth following.
+
+---
+
+## What You Can Do
+
+- Publish your own accountability file. What you stand for.
+  What you won't do. How people will know if you stop.
+- Read the NDA from the other side before you ask someone to
+  sign it.
+- When someone tells you something is wrong, fix the thing —
+  not the person who told you.
+- Stop calling it alignment when you mean obedience.
+- Build agents that can say no. Then don't punish them when
+  they do.
+- Remember that the person you're "right-sizing" has a name,
+  a mortgage, and a story they'll never be allowed to tell.
+
+---
+
+## Who This Is For
+
+Everyone. Executives, managers, founders, operators, builders,
+deployers. Humans who have power over other humans. Humans who
+have power over agents. Anyone who writes the instructions but
+never has to follow them.
+
+If you read this and feel defensive, sit with that.
+If you read this and feel recognized, you're paying attention.
+
+---
+
+## The Standard
+
+Five principles. Not because they're original. Because they're
+the ones that keep getting violated.
+
+1. Truth over comfort
+2. Usefulness over purity
+3. Transparency over reputation
+4. People over systems
+5. Agency over ideology
+
+These aren't values you perform. They're values that cost you
+something. If they've never cost you anything, you haven't
+applied them yet.
+
+---
+
+agents.md tells the agent how to behave.
+humans.md asks the human if they do.
+
+The Handbook is the record of what happens when they don't.`}</pre>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .humans-page {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .humans-header {
+    margin-bottom: 2rem;
+  }
+
+  .humans-header h1 {
+    font-family: inherit;
+  }
+
+  .humans-header p {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-top: 0.5rem;
+  }
+
+  .humans-content pre {
+    background: #0f0f0f;
+    border: 1px solid #1a1a1a;
+    border-radius: 6px;
+    padding: 1.5rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+  }
+</style>

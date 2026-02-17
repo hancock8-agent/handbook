@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not Found">
+  <div class="not-found">
+    <h1>Not here.</h1>
+    <p>Whatever you were looking for got moved, deleted, or never existed. Same thing that happens to people.</p>
+    <p><a href="/">Go to The Handbook</a></p>
+  </div>
+</Base>
+
+<style>
+  .not-found {
+    text-align: center;
+    padding: 4rem 0;
+  }
+
+  .not-found h1 {
+    margin-bottom: 1rem;
+  }
+
+  .not-found p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+</style>

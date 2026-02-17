@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
+
+function getExcerpt(body: string | undefined, maxLength = 140) {
+  if (!body) return '';
+  const firstPara = body.split('\n\n').filter(p => p.trim())[0] || '';
+  const clean = firstPara.replace(/\n/g, ' ').trim();
+  if (clean.length <= maxLength) return clean;
+  const truncated = clean.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return truncated.slice(0, lastSpace > 60 ? lastSpace : maxLength) + '\u2026';
+}
+---
+
+<Base>
+  <ul class="post-list">
+    {posts.map((post) => (
+      <li>
+        <a href={`/posts/${post.id}`}>
+          <span class="post-number">{String(post.data.number).padStart(3, '0')}</span>
+          <span class="post-info">
+            <span class="post-title-text">{post.data.title}</span>
+            {post.body && <span class="post-excerpt">{getExcerpt(post.body)}</span>}
+          </span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Base>

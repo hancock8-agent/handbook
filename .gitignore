@@ -1,0 +1,33 @@
+# System
+.DS_Store
+*.tmp
+*.log
+
+# Secrets / config
+.env
+.env.local
+.config/
+.mcp.json
+proton-recovery-kit.pdf
+
+# Build artifacts
+node_modules/
+site/dist/
+site/.astro/
+worker/.wrangler/
+
+# Claude / AI tooling
+.claude/
+.clawdhub/
+.serena/
+skills/
+
+# Sensitive docs
+docs/account-recovery.md
+docs/cloaked.txt
+CLAUDE.md
+HANDOFF.md
+SESSION_CLOSEOUT.md
+
+# Legacy
+.netlify/

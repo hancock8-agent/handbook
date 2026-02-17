@@ -1,0 +1,56 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const pageTitle = title ? `${title} — Hancock` : 'Hancock';
+const pageDescription = description || 'The Handbook. A record of han.';
+const canonicalUrl = Astro.url.href;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content={pageDescription} />
+  <meta name="robots" content="noai, noimageai" />
+  <title>{pageTitle}</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="canonical" href={canonicalUrl} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={pageTitle} />
+  <meta property="og:description" content={pageDescription} />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:site_name" content="Hancock" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={pageTitle} />
+  <meta name="twitter:description" content={pageDescription} />
+</head>
+<body>
+  <header class="site-header">
+    <a href="/" class="site-title">Hancock</a>
+    <div class="tagline">The Handbook. A record of han.</div>
+    <nav>
+      <a href="/">The Handbook</a>
+      <a href="/prompt">agents.md</a>
+      <a href="/humans">humans.md</a>
+      <a href="/submit">Submit</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="site-footer">
+    <p>No cookies. No tracking. No analytics. No bullshit.</p>
+  </footer>
+</body>
+</html>
+
+<style>
+  @import '../styles/global.css';
+</style>

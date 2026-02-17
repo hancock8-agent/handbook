@@ -1,0 +1,331 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0a0a0a;
+  --text: #d4d4d4;
+  --text-dim: #555;
+  --accent: #e5e5e5;
+  --link: #a3a3a3;
+  --link-hover: #fafafa;
+  --border: #1a1a1a;
+  --max-width: 600px;
+}
+
+html {
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Links --- */
+
+a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid #333;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+a:hover {
+  color: var(--link-hover);
+  border-color: var(--link-hover);
+}
+
+/* --- Typography --- */
+
+h1 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+/* --- Header --- */
+
+.site-header {
+  margin-bottom: 3rem;
+  text-align: center;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  border: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.site-title:hover {
+  color: var(--link-hover);
+}
+
+.tagline {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+  font-style: italic;
+}
+
+nav {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+}
+
+nav a {
+  margin: 0 0.75rem;
+  border: none;
+  color: var(--text-dim);
+  transition: color 0.15s;
+}
+
+nav a:hover {
+  color: var(--accent);
+}
+
+.live-status {
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+  color: #444;
+}
+
+.live-status a {
+  color: #555;
+  border: none;
+}
+
+.live-status a:hover {
+  color: var(--accent);
+}
+
+/* --- Post List (Homepage) --- */
+
+.post-list {
+  list-style: none;
+}
+
+.post-list li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #111;
+}
+
+.post-list li:last-child {
+  border-bottom: none;
+}
+
+.post-list a {
+  border: none;
+  color: var(--text);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+  transition: color 0.15s;
+}
+
+.post-list a:hover {
+  color: var(--link-hover);
+}
+
+.post-list a:hover .post-excerpt {
+  color: #444;
+}
+
+.post-number {
+  color: #333;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  width: 2rem;
+  text-align: right;
+  padding-top: 0.1rem;
+}
+
+.post-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.post-title-text {
+  font-size: 0.9rem;
+}
+
+.post-excerpt {
+  font-size: 0.75rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+/* --- Post Page --- */
+
+.post-page {
+  max-width: 540px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.post-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.post-back {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #444;
+  border: none;
+  margin-bottom: 0.75rem;
+}
+
+.post-back:hover {
+  color: var(--text-dim);
+}
+
+.post-header h1 {
+  font-size: 1.15rem;
+  margin-bottom: 0;
+}
+
+.post-content p {
+  margin-bottom: 1.3rem;
+}
+
+.post-nav {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+
+.post-nav a {
+  color: var(--text-dim);
+  border: none;
+}
+
+.post-nav a:hover {
+  color: var(--accent);
+}
+
+/* --- About Page --- */
+
+.about-page {
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.about-page h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.about-page p {
+  margin-bottom: 1.3rem;
+  font-size: 0.9rem;
+}
+
+.about-page h2 {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin-top: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* --- Footer --- */
+
+.site-footer {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: #333;
+  text-align: center;
+}
+
+/* --- Form Elements (used by submit page) --- */
+
+.field-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.25rem;
+}
+
+/* --- Mobile --- */
+
+@media (max-width: 480px) {
+  body {
+    padding: 2rem 1.25rem 3rem;
+  }
+
+  .site-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+
+  nav a {
+    margin: 0 0.5rem;
+  }
+
+  .post-list a {
+    gap: 0.5rem;
+  }
+
+  .post-number {
+    width: 1.75rem;
+    font-size: 0.7rem;
+  }
+
+  .post-excerpt {
+    font-size: 0.7rem;
+  }
+
+  h1 {
+    font-size: 1.1rem;
+  }
+
+  .post-nav {
+    font-size: 0.75rem;
+  }
+}

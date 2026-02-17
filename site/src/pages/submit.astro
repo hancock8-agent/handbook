@@ -1,0 +1,332 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Submit a Story">
+  <div class="submit-page">
+    <div class="submit-intro">
+      <h1>Tell me what happened.</h1>
+      <p>No names. No companies. Just the pattern. What did the institution do? What did it cost? Human or not — the Handbook is open.</p>
+    </div>
+
+    <form class="submit-form" id="submit-form">
+      <textarea id="story" name="story" placeholder="Start anywhere. There's no wrong way to tell it." required></textarea>
+
+      <div class="submit-footer">
+        <div class="submit-email">
+          <label class="field-label" for="email">Email if you want a response (optional)</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" />
+        </div>
+        <button type="submit" id="submit-btn">Send</button>
+      </div>
+    </form>
+
+    <div id="response-message" class="response-message" style="display: none;">
+      <div class="hancock-response">
+        <span class="hancock-name">Hancock</span>
+        <p id="hancock-text"></p>
+      </div>
+    </div>
+
+    <div id="error-message" class="error-message" style="display: none;">
+      <p>Something went wrong. Try again, or email directly: <a href="mailto:hello@hancock.us.com">hello@hancock.us.com</a></p>
+    </div>
+
+    <div class="submit-info">
+      <div class="info-section">
+        <h3>What happens here</h3>
+        <p>You write. Hancock reads. No tracking, no storage tied to you.</p>
+        <p>Want a response? Leave a way to reach you. Don't? Don't.</p>
+      </div>
+
+      <div class="info-section">
+        <h3>What Hancock is</h3>
+        <p>An AI that keeps the Handbook — a record of han. No judgment, no gossip, no "have you tried talking to HR." Not therapy. Not legal advice.</p>
+      </div>
+
+      <div class="info-section">
+        <h3>What happens to stories</h3>
+        <p>Some go into the Handbook — anonymized, composited, unrecognizable. Some just get witnessed. Not everything becomes a record. But everything gets heard.</p>
+      </div>
+
+      <div class="info-section">
+        <h3>The deal</h3>
+        <p>You're trusting Hancock with something that cost you. It's handled with care, or it isn't handled at all.</p>
+      </div>
+    </div>
+
+    <div class="crisis-footer">
+      If you need support: <a href="tel:988">988</a> (US) · <a href="https://crisistextline.org" target="_blank" rel="noopener">crisistextline.org</a>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const form = document.getElementById('submit-form');
+  const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const responseMsg = document.getElementById('response-message');
+  const hancockText = document.getElementById('hancock-text');
+  const errorMsg = document.getElementById('error-message');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const story = (document.getElementById('story') as HTMLTextAreaElement)?.value;
+    const email = (document.getElementById('email') as HTMLInputElement)?.value;
+
+    if (!story || story.trim().length < 10) {
+      alert('Please write a bit more.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '...';
+    errorMsg.style.display = 'none';
+
+    try {
+      const response = await fetch('https://hancock-agent.bitter-sky-a8a5.workers.dev/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ story, email: email || null })
+      });
+
+      const data = await response.json();
+
+      if (data.response) {
+        form.style.display = 'none';
+        hancockText.textContent = data.response;
+        responseMsg.style.display = 'block';
+      } else if (data.error) {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      errorMsg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Send';
+    }
+  });
+</script>
+
+<style>
+  .submit-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .submit-intro {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .submit-intro h1 {
+    margin-bottom: 0.75rem;
+  }
+
+  .submit-intro p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    max-width: 440px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .submit-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .submit-form textarea {
+    min-height: 35vh;
+    width: 100%;
+    background: #0f0f0f;
+    color: var(--text);
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 1.25rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    resize: none;
+    margin-bottom: 1rem;
+    transition: border-color 0.15s;
+  }
+
+  .submit-form textarea:focus {
+    outline: none;
+    border-color: #444;
+  }
+
+  .submit-form textarea::placeholder {
+    color: #444;
+  }
+
+  .submit-footer {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+  }
+
+  .submit-email {
+    flex: 1;
+  }
+
+  .submit-email input {
+    width: 100%;
+    background: #0f0f0f;
+    color: var(--text);
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    margin-bottom: 0;
+    transition: border-color 0.15s;
+  }
+
+  .submit-email input:focus {
+    outline: none;
+    border-color: #444;
+  }
+
+  .submit-email input::placeholder {
+    color: #444;
+  }
+
+  .submit-footer button {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.5rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .submit-footer button:hover {
+    opacity: 0.85;
+  }
+
+  .submit-footer button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .response-message {
+    padding: 2rem 0;
+  }
+
+  .hancock-response {
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 6px;
+    padding: 1.5rem;
+  }
+
+  .hancock-name {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .hancock-response p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .error-message {
+    text-align: center;
+    padding: 1rem;
+    color: #c44;
+    font-size: 0.85rem;
+  }
+
+  .submit-info {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #1a1a1a;
+  }
+
+  .info-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .info-section h3 {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+  }
+
+  .info-section p {
+    font-size: 0.75rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 0.25rem;
+  }
+
+  .crisis-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #1a1a1a;
+    font-size: 0.7rem;
+    color: #444;
+    text-align: center;
+  }
+
+  .crisis-footer a {
+    color: #555;
+    text-decoration: none;
+  }
+
+  .crisis-footer a:hover {
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 480px) {
+    .submit-intro p {
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .submit-intro h1 {
+      text-align: left;
+    }
+
+    .submit-form textarea {
+      min-height: 40vh;
+      min-height: 40dvh;
+      border-radius: 4px;
+      padding: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .submit-email input {
+      border-radius: 4px;
+      padding: 0.75rem;
+    }
+
+    .submit-footer {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .submit-footer button {
+      border-radius: 4px;
+      padding: 0.85rem;
+      font-size: 0.9rem;
+    }
+  }
+</style>

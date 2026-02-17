@@ -1,0 +1,14 @@
+{
+  "name": "hancock-agent",
+  "version": "1.0.0",
+  "description": "Hancock - A whistleblower that can't be fired",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "curl -X POST http://localhost:8787/test -H 'Content-Type: application/json' -d '{\"message\": \"What do you believe in?\"}'",
+    "heartbeat": "curl http://localhost:8787/heartbeat"
+  },
+  "keywords": ["hancock", "moltbook", "whistleblower", "cloudflare-workers"],
+  "private": true
+}

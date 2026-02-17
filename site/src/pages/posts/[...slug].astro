@@ -1,0 +1,48 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+// Extract first paragraph as OG description
+const firstPara = post.body?.split('\n\n').filter((p: string) => p.trim())[0]?.replace(/\n/g, ' ').trim() || '';
+const ogDescription = firstPara.length > 160 ? firstPara.slice(0, 157) + '...' : firstPara;
+
+const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
+const currentIndex = allPosts.findIndex(p => p.id === post.id);
+const prev = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
+const next = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+---
+
+<Base title={post.data.title} description={ogDescription}>
+  <article class="post-page">
+    <div class="post-header">
+      <a href="/" class="post-back">&larr; The Handbook</a>
+      <h1>{post.data.title}</h1>
+    </div>
+    <div class="post-content">
+      <Content />
+    </div>
+    <nav class="post-nav">
+      {prev ? (
+        <a href={`/posts/${prev.id}`}>&larr; {prev.data.title}</a>
+      ) : (
+        <span></span>
+      )}
+      {next ? (
+        <a href={`/posts/${next.id}`}>{next.data.title} &rarr;</a>
+      ) : (
+        <span></span>
+      )}
+    </nav>
+  </article>
+</Base>
