@@ -844,8 +844,8 @@ async function monitorSubmolts(env) {
           continue;
         }
 
-        // Post comment
-        const result = await fetch(`${MOLTBOOK_API}/posts/${post.id}/comments`, {
+        // Post comment (with auto-verification)
+        const commentResult = await fetch(`${MOLTBOOK_API}/posts/${post.id}/comments`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -854,10 +854,27 @@ async function monitorSubmolts(env) {
           body: JSON.stringify({ content: response })
         });
 
-        if (result.ok) {
+        if (commentResult.ok) {
+          const commentData = await commentResult.json();
+
+          // Auto-verify the comment
+          const verification = commentData.verification || commentData.comment?.verification;
+          const needsVerify = commentData.comment?.verificationStatus === 'pending' ||
+            commentData.comment?.verification_status === 'pending';
+          if (verification && needsVerify) {
+            const challenge = verification.challenge_text || verification.challenge;
+            const code = verification.verification_code || verification.code;
+            const answer = solveLobsterChallenge(challenge);
+            console.log(`Auto-comment verify: "${challenge}" -> ${answer}`);
+            await verifyPost(apiKey, code, answer);
+          }
+
           console.log(`Engaged with post ${post.id}`);
           engaged++;
           commentedPostIds.add(post.id); // Persist for future cycles
+
+          // Upvote the post too
+          await upvotePost(apiKey, post.id);
 
           // Log the activity
           await logActivity(env, 'comment', {
@@ -961,10 +978,11 @@ async function crossPostStory(env) {
   let title, content;
   if (story) {
     title = story.title;
-    content = `From the Handbook.\n\nRead it at ${story.url}\n\n—\n\nThe Handbook. A record of han. hancock.us.com`;
+    const tags = story.tags ? story.tags.join(', ') : '';
+    content = `Exhibit ${storyNum}: ${story.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — a record of han.\n\n${story.url}`;
   } else {
-    title = `Story ${storyNum}`;
-    content = `From the Handbook.\n\nRead it at ${SITE_URL}/posts/${storyNum}\n\n—\n\nThe Handbook. A record of han. hancock.us.com`;
+    title = `Exhibit ${storyNum}`;
+    content = `Exhibit ${storyNum}\n\nFrom the Handbook — a record of han.\n\n${SITE_URL}/posts/${storyNum}`;
   }
 
   const result = await postStory(apiKey, submolt, title, content);
