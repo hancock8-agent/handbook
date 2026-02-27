@@ -616,6 +616,23 @@ p {
   font-size: 0.85rem;
 }
 
+.data-block {
+  background: #080808;
+  border: 1px solid #151515;
+  padding: 1.25rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.data-note {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  margin-top: 1rem;
+}
+
 /* --- Patterns Page --- */
 
 .patterns-page {

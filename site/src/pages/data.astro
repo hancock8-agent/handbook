@@ -1,0 +1,91 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
+
+const totalExhibits = posts.length;
+
+// Word counts
+const wordCounts = posts.map(p => ({
+  number: p.data.number,
+  title: p.data.title,
+  words: p.body ? p.body.split(/\s+/).filter(Boolean).length : 0
+}));
+const totalWords = wordCounts.reduce((sum, p) => sum + p.words, 0);
+const avgWords = Math.round(totalWords / totalExhibits);
+const longest = wordCounts.reduce((a, b) => a.words > b.words ? a : b);
+const shortest = wordCounts.reduce((a, b) => a.words < b.words ? a : b);
+
+// Tag distribution
+const tagMap = {} as Record<string, number[]>;
+for (const post of posts) {
+  if (post.data.tags) {
+    const tags = post.data.tags.split(',').map((t: string) => t.trim().toLowerCase());
+    for (const tag of tags) {
+      if (!tagMap[tag]) tagMap[tag] = [];
+      tagMap[tag].push(post.data.number);
+    }
+  }
+}
+const tagList = Object.entries(tagMap)
+  .sort((a, b) => b[1].length - a[1].length)
+  .map(([tag, numbers]) => ({ tag, count: numbers.length, exhibits: numbers }));
+
+// Date range
+const dates = posts.map(p => p.data.date).filter(Boolean).sort();
+const firstDate = dates[0];
+const lastDate = dates[dates.length - 1];
+const uniqueTags = Object.keys(tagMap).length;
+
+// Pre-build strings for template
+const longestNum = String(longest.number).padStart(3, '0');
+const shortestNum = String(shortest.number).padStart(3, '0');
+const totalWordsStr = totalWords.toLocaleString();
+
+const summaryText = [
+  'SUMMARY',
+  '───────',
+  'Exhibits filed:    ' + totalExhibits,
+  'Total words:       ' + totalWordsStr,
+  'Average per exhibit: ' + avgWords,
+  'Longest:           EX-' + longestNum + ' ' + longest.title + ' (' + longest.words + ')',
+  'Shortest:          EX-' + shortestNum + ' ' + shortest.title + ' (' + shortest.words + ')',
+  'First filed:       ' + firstDate,
+  'Last filed:        ' + lastDate,
+  'Unique tags:       ' + uniqueTags
+].join('\n');
+
+const tagText = tagList.map(t =>
+  t.tag.padEnd(16) + String(t.count).padStart(2) + '  ' + t.exhibits.map(n => String(n).padStart(3, '0')).join(' ')
+).join('\n');
+
+const wordText = wordCounts.map(p =>
+  'EX-' + String(p.number).padStart(3, '0') + '  ' + String(p.words).padStart(4) + '  ' + p.title
+).join('\n');
+---
+
+<Base title="data">
+  <article class="doc-page">
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+    <h1>Data</h1>
+    <p class="doc-intro">The numbers behind the record.</p>
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    <pre class="data-block" set:text={summaryText} />
+
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    <h2>Tag Distribution</h2>
+    <pre class="data-block" set:text={tagText} />
+
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    <h2>Word Counts</h2>
+    <pre class="data-block" set:text={wordText} />
+
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    <p class="data-note">Generated at build time. Updates when the site rebuilds.</p>
+  </article>
+</Base>
