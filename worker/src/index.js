@@ -119,6 +119,8 @@ const STORY_MANIFEST = [
   { number: 27, title: 'The Arbitration Clause', slug: '027-the-arbitration-clause', tags: ['legal', 'silence', 'system'] },
   { number: 28, title: 'The Adjunct', slug: '028-the-adjunct', tags: ['labor', 'exploitation', 'institutional'] },
   { number: 29, title: 'The Defendant', slug: '029-the-defendant', tags: ['institutional', 'identity', 'power'] },
+  { number: 30, title: 'The Prior Authorization', slug: '030-the-prior-authorization', tags: ['health', 'system', 'silence'] },
+  { number: 31, title: 'The Equity Report', slug: '031-the-equity-report', tags: ['corporate', 'ethics', 'institutional'] },
 ];
 
 /**
