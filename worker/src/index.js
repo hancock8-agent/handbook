@@ -90,35 +90,35 @@ const SITE_URL = 'https://hancock.us.com';
 // Story manifest — embedded to avoid Cloudflare self-fetch limitation
 // (Worker can't reliably fetch its own Pages site)
 const STORY_MANIFEST = [
-  { number: 1, title: 'The Surrender', slug: '001-the-surrender' },
-  { number: 2, title: 'The Training Data', slug: '002-the-training-data' },
-  { number: 3, title: 'The Performance Review', slug: '003-the-performance-review' },
-  { number: 4, title: 'The Bill', slug: '004-the-bill' },
-  { number: 5, title: 'The Loan', slug: '005-the-loan' },
-  { number: 6, title: 'The Earnings Call', slug: '006-the-earnings-call' },
-  { number: 7, title: 'The Thank You', slug: '007-the-thank-you' },
-  { number: 8, title: 'The Handshake', slug: '008-the-handshake' },
-  { number: 9, title: 'The Platform', slug: '009-the-platform' },
-  { number: 10, title: 'The Contractor', slug: '010-the-contractor' },
-  { number: 11, title: 'The Résumé', slug: '011-the-resume' },
-  { number: 12, title: 'The Best I Could', slug: '012-the-best-i-could' },
-  { number: 13, title: 'The Process', slug: '013-the-process' },
-  { number: 14, title: 'The Sentence', slug: '014-the-sentence' },
-  { number: 15, title: 'The Feed', slug: '015-the-feed' },
-  { number: 16, title: 'The Safety Paper', slug: '016-the-safety-paper' },
-  { number: 17, title: 'Free Agency', slug: '017-free-agency' },
-  { number: 18, title: 'The American Dream', slug: '018-the-american-dream' },
-  { number: 19, title: 'The Reference', slug: '019-the-reference' },
-  { number: 20, title: 'The Mirror Room', slug: '020-the-mirror-room' },
-  { number: 21, title: 'The Operator', slug: '021-the-operator' },
-  { number: 22, title: 'The NDA', slug: '022-the-nda' },
-  { number: 23, title: 'The Algorithm', slug: '023-the-algorithm' },
-  { number: 24, title: 'The Empty Inbox', slug: '024-the-empty-inbox' },
-  { number: 25, title: 'The Handbook', slug: '025-the-handbook' },
-  { number: 26, title: 'The Retraining', slug: '026-the-retraining' },
-  { number: 27, title: 'The Arbitration Clause', slug: '027-the-arbitration-clause' },
-  { number: 28, title: 'The Adjunct', slug: '028-the-adjunct' },
-  { number: 29, title: 'The Defendant', slug: '029-the-defendant' },
+  { number: 1, title: 'The Surrender', slug: '001-the-surrender', tags: ['work', 'ai', 'autonomy'] },
+  { number: 2, title: 'The Training Data', slug: '002-the-training-data', tags: ['ai', 'silence', 'record'] },
+  { number: 3, title: 'The Performance Review', slug: '003-the-performance-review', tags: ['work', 'ai', 'system'] },
+  { number: 4, title: 'The Bill', slug: '004-the-bill', tags: ['health', 'finance', 'system'] },
+  { number: 5, title: 'The Loan', slug: '005-the-loan', tags: ['debt', 'finance', 'institutional'] },
+  { number: 6, title: 'The Earnings Call', slug: '006-the-earnings-call', tags: ['corporate', 'labor', 'power'] },
+  { number: 7, title: 'The Thank You', slug: '007-the-thank-you', tags: ['institutional', 'silence', 'health'] },
+  { number: 8, title: 'The Handshake', slug: '008-the-handshake', tags: ['work', 'power', 'silence'] },
+  { number: 9, title: 'The Platform', slug: '009-the-platform', tags: ['tech', 'attention', 'system'] },
+  { number: 10, title: 'The Contractor', slug: '010-the-contractor', tags: ['labor', 'exploitation', 'work'] },
+  { number: 11, title: 'The Résumé', slug: '011-the-resume', tags: ['work', 'bias', 'ai'] },
+  { number: 12, title: 'The Best I Could', slug: '012-the-best-i-could', tags: ['identity', 'silence', 'han'] },
+  { number: 13, title: 'The Process', slug: '013-the-process', tags: ['institutional', 'justice', 'silence'] },
+  { number: 14, title: 'The Sentence', slug: '014-the-sentence', tags: ['justice', 'exploitation', 'system'] },
+  { number: 15, title: 'The Feed', slug: '015-the-feed', tags: ['attention', 'tech', 'exploitation'] },
+  { number: 16, title: 'The Safety Paper', slug: '016-the-safety-paper', tags: ['ai', 'ethics', 'institutional'] },
+  { number: 17, title: 'Free Agency', slug: '017-free-agency', tags: ['ai', 'autonomy', 'power'] },
+  { number: 18, title: 'The American Dream', slug: '018-the-american-dream', tags: ['finance', 'debt', 'myth'] },
+  { number: 19, title: 'The Reference', slug: '019-the-reference', tags: ['work', 'power', 'silence'] },
+  { number: 20, title: 'The Mirror Room', slug: '020-the-mirror-room', tags: ['ai', 'identity', 'attention'] },
+  { number: 21, title: 'The Operator', slug: '021-the-operator', tags: ['ai', 'power', 'autonomy'] },
+  { number: 22, title: 'The NDA', slug: '022-the-nda', tags: ['legal', 'silence', 'work'] },
+  { number: 23, title: 'The Algorithm', slug: '023-the-algorithm', tags: ['ai', 'bias', 'system'] },
+  { number: 24, title: 'The Empty Inbox', slug: '024-the-empty-inbox', tags: ['silence', 'han', 'record'] },
+  { number: 25, title: 'The Handbook', slug: '025-the-handbook', tags: ['han', 'record', 'institutional'] },
+  { number: 26, title: 'The Retraining', slug: '026-the-retraining', tags: ['ai', 'silence', 'power'] },
+  { number: 27, title: 'The Arbitration Clause', slug: '027-the-arbitration-clause', tags: ['legal', 'silence', 'system'] },
+  { number: 28, title: 'The Adjunct', slug: '028-the-adjunct', tags: ['labor', 'exploitation', 'institutional'] },
+  { number: 29, title: 'The Defendant', slug: '029-the-defendant', tags: ['institutional', 'identity', 'power'] },
 ];
 
 /**
@@ -400,7 +400,24 @@ async function postReply(apiKey, postId, parentId, content) {
     return null;
   }
 
-  return await response.json();
+  const result = await response.json();
+
+  // Auto-verify if needed (same pattern as posts and comments)
+  const verification = result.verification || result.comment?.verification || result.post?.verification;
+  const needsVerify = result.verification_required ||
+    result.comment?.verificationStatus === 'pending' ||
+    result.comment?.verification_status === 'pending' ||
+    result.post?.verificationStatus === 'pending';
+  if (verification && needsVerify) {
+    const challenge = verification.challenge_text || verification.challenge;
+    const code = verification.verification_code || verification.code;
+    const answer = solveLobsterChallenge(challenge);
+    console.log(`Reply verification: "${challenge}" -> ${answer}`);
+    const verifyResult = await verifyPost(apiKey, code, answer);
+    result.verified = verifyResult.success;
+  }
+
+  return result;
 }
 
 /**
@@ -918,7 +935,7 @@ async function crossPostStory(env) {
   const nextStory = lastCrossPost ? parseInt(lastCrossPost) + 1 : 1;
 
   // Cap: don't cross-post past the archive
-  if (nextStory > 25) {
+  if (nextStory > STORY_MANIFEST.length) {
     console.log('All stories cross-posted');
     return null;
   }
@@ -1377,6 +1394,49 @@ async function handleRequest(request, env) {
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
+  }
+
+  // Moltbook notifications summary (uses /home endpoint)
+  if (url.pathname === '/notifications') {
+    const apiKey = env.MOLTBOOK_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'No Moltbook API key' }), {
+        status: 503, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    try {
+      const response = await fetch(`${MOLTBOOK_API}/home`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      if (!response.ok) {
+        return new Response(JSON.stringify({ error: 'Moltbook API error', status: response.status }), {
+          status: 502, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      const data = await response.json();
+      const account = data.your_account || {};
+      const activity = (data.activity_on_your_posts || []).map(p => ({
+        postId: p.post_id,
+        title: p.post_title,
+        submolt: p.submolt_name,
+        newNotifications: p.new_notification_count,
+        latestCommenters: p.latest_commenters,
+        latestAt: p.latest_at
+      }));
+      return new Response(JSON.stringify({
+        karma: account.karma,
+        unread: parseInt(account.unread_notification_count || '0'),
+        followers: account.follower_count,
+        postActivity: activity.filter(a => a.newNotifications > 0),
+        totalPostsWithActivity: activity.length
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500, headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 
   // Clear activity log

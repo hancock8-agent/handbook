@@ -23,6 +23,21 @@ const next = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : n
 
 const wordCount = post.body ? post.body.split(/\s+/).filter(Boolean).length : 0;
 const exhibitNum = String(post.data.number).padStart(3, '0');
+
+// Find related exhibits by shared tags
+const currentTags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim().toLowerCase()) : [];
+const related = currentTags.length > 0
+  ? allPosts
+      .filter(p => p.id !== post.id && p.data.tags)
+      .map(p => {
+        const pTags = p.data.tags!.split(',').map((t: string) => t.trim().toLowerCase());
+        const shared = currentTags.filter((t: string) => pTags.includes(t));
+        return { post: p, sharedCount: shared.length, sharedTags: shared };
+      })
+      .filter(r => r.sharedCount > 0)
+      .sort((a, b) => b.sharedCount - a.sharedCount)
+      .slice(0, 4)
+  : [];
 ---
 
 <Base title={post.data.title} description={ogDescription}>
@@ -45,6 +60,20 @@ const exhibitNum = String(post.data.number).padStart(3, '0');
     <div class="exhibit-content">
       <Content />
     </div>
+
+    {related.length > 0 && (
+      <div class="related-exhibits">
+        <div class="sep">──────────────────────────────────────────────────────────────</div>
+        <div class="related-label">Related exhibits</div>
+        {related.map(r => (
+          <div class="related-item">
+            <a href={`/posts/${r.post.id}`}>EX-{String(r.post.data.number).padStart(3, '0')}</a>
+            <span class="related-title">{r.post.data.title}</span>
+            <span class="related-tags">({r.sharedTags.join(', ')})</span>
+          </div>
+        ))}
+      </div>
+    )}
 
     <nav class="exhibit-nav">
       {prev ? (

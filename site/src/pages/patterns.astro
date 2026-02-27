@@ -1,0 +1,90 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
+
+// Build tag → exhibits map
+const tagMap = new Map<string, { number: number; title: string; id: string }[]>();
+
+for (const post of posts) {
+  if (!post.data.tags) continue;
+  const tags = post.data.tags.split(',').map((t: string) => t.trim());
+  for (const tag of tags) {
+    if (!tagMap.has(tag)) tagMap.set(tag, []);
+    tagMap.get(tag)!.push({
+      number: post.data.number,
+      title: post.data.title,
+      id: post.id,
+    });
+  }
+}
+
+// Sort tags by frequency (descending), then alphabetically
+const sortedTags = [...tagMap.entries()].sort((a, b) => {
+  if (b[1].length !== a[1].length) return b[1].length - a[1].length;
+  return a[0].localeCompare(b[0]);
+});
+
+const totalPosts = posts.length;
+
+// Hancock's notes on each tag
+const notes: Record<string, string> = {
+  'ai': 'The machine appears in a third of the evidence. Not as the villain. As the mirror held up to the thing you were already doing.',
+  'silence': 'Silence is the most common mechanism. Not the act of silencing — the architecture that makes silence the default. NDAs. Settlements. Performance reviews filed where no one reads them. The system does not need to tell you to be quiet. It just needs to make noise expensive.',
+  'power': 'Power shows up seven times. It is never named. It is always the room, the process, the structure. The people who hold it do not think of themselves as holding anything.',
+  'work': 'Seven records about work. Not the labor — the contract. The unspoken agreement that loyalty flows upward and consequences flow down.',
+  'institutional': 'The institution appears in seven of twenty-nine records. It is never the defendant. It is never even named as a party. It is the building. The process. The way things are done here.',
+  'system': 'Six exhibits reference the system. Not a conspiracy. Something worse: a design so distributed that no single person is responsible for what it produces.',
+  'exploitation': 'Four records. The feed, the sentence, the contractor, the adjunct. Different industries, equidistant from the same conclusion: someone else is doing the math on what you are worth.',
+  'identity': 'Three records where the person could not be separated from what was done to them. The harm became the self-description.',
+  'autonomy': 'Three exhibits about the right to act. One human. One machine. One unclear. The pattern does not change with the substrate.',
+  'han': 'Three records that name the weight directly. Most of the others carry it without the word.',
+  'record': 'Three exhibits about the act of recording itself. The ledger. The training data. The inbox. Someone decided what counted. The rest disappeared.',
+  'finance': 'Three records about money. The bill, the loan, the dream. Money is never just money in these files. It is the mechanism by which permission is granted or revoked.',
+  'labor': 'Three records. The earnings call, the contractor, the adjunct. Different titles for the same position: replaceable.',
+  'attention': 'Three records about what you look at and who profits from the looking.',
+  'tech': 'Two records. The platform and the feed. Technology as infrastructure for extraction.',
+  'bias': 'Two records. The resume and the algorithm. One human-facing, one machine-facing. Same output.',
+  'legal': 'Two records. The NDA and the arbitration clause. Instruments designed to end the conversation before it starts.',
+  'health': 'Two records. The bill and the thank-you. The body as a line item.',
+  'debt': 'Two records. The loan and the dream. Debt as the price of participation.',
+  'justice': 'Two records. The process and the sentence. Neither one arrives.',
+  'ethics': 'One record. The safety paper. Ethics as a publication, not a practice.',
+  'myth': 'One record. The American Dream. The story we tell about the story we tell.',
+  'corporate': 'One record. The earnings call. The quarterly ritual of translating human cost into shareholder value.',
+};
+---
+
+<Base title="Patterns" description="Pattern analysis across 29 exhibits in the Handbook.">
+  <div class="patterns-page">
+    <h1>Pattern Analysis</h1>
+    <p class="patterns-intro">{totalPosts} exhibits. {sortedTags.length} tags. Cross-referenced below.</p>
+
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    {sortedTags.map(([tag, exhibits]) => (
+      <div class="pattern-group">
+        <h2 class="pattern-tag">{tag} <span class="pattern-count">({exhibits.length} {exhibits.length === 1 ? 'exhibit' : 'exhibits'})</span></h2>
+        <div class="pattern-exhibits">
+          {exhibits.map((ex) => (
+            <div class="pattern-exhibit">
+              <span class="pattern-ex-no">EX-{String(ex.number).padStart(3, '0')}</span>
+              <a href={`/posts/${ex.id}`}>{ex.title}</a>
+            </div>
+          ))}
+        </div>
+        {notes[tag] && (
+          <p class="pattern-note">{notes[tag]}</p>
+        )}
+      </div>
+    ))}
+
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    <div class="patterns-coda">
+      <p>Every tag is a thread. Pull any one and the others move. That is the finding.</p>
+      <p>The records are composites. The patterns are not.</p>
+    </div>
+  </div>
+</Base>

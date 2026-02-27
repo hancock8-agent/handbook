@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
+const totalCount = posts.length;
 ---
 
 <Base>
@@ -13,7 +14,11 @@ const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.da
 
   <div class="sep">──────────────────────────────────────────────────────────────</div>
 
-  <table class="index-table">
+  <div id="filter-status" class="filter-status" style="display: none;">
+    showing <span id="filter-count">0</span> of {totalCount} — <a href="#" id="filter-clear">clear</a>
+  </div>
+
+  <table class="index-table" id="index-table">
     <thead>
       <tr>
         <th class="col-no">No.</th>
@@ -22,15 +27,24 @@ const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.da
       </tr>
     </thead>
     <tbody>
-      {posts.map((post) => (
-        <tr>
-          <td class="col-no">EX-{String(post.data.number).padStart(3, '0')}</td>
-          <td class="col-title">
-            <a href={`/posts/${post.id}`}>{post.data.title}</a>
-          </td>
-          <td class="col-re">{post.data.tags || ''}</td>
-        </tr>
-      ))}
+      {posts.map((post) => {
+        const tags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim()) : [];
+        return (
+          <tr data-tags={tags.join(',')}>
+            <td class="col-no">EX-{String(post.data.number).padStart(3, '0')}</td>
+            <td class="col-title">
+              <a href={`/posts/${post.id}`}>{post.data.title}</a>
+            </td>
+            <td class="col-re">
+              {tags.map((tag: string, i: number) => (
+                <>
+                  <span class="tag-link" data-tag={tag}>{tag}</span>{i < tags.length - 1 ? ', ' : ''}
+                </>
+              ))}
+            </td>
+          </tr>
+        );
+      })}
     </tbody>
   </table>
 
@@ -44,6 +58,61 @@ const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.da
 </Base>
 
 <script>
+  // Tag filtering
+  function initFilter() {
+    const status = document.getElementById('filter-status');
+    const countEl = document.getElementById('filter-count');
+    const clearBtn = document.getElementById('filter-clear');
+    const rows = document.querySelectorAll('#index-table tbody tr');
+    const tagLinks = document.querySelectorAll('.tag-link');
+    let activeTag: string | null = null;
+
+    function filterBy(tag: string | null) {
+      activeTag = tag;
+      let visible = 0;
+
+      rows.forEach((row) => {
+        const rowTags = (row as HTMLElement).dataset.tags || '';
+        const tagList = rowTags.split(',').map(t => t.trim());
+        if (!tag || tagList.includes(tag)) {
+          (row as HTMLElement).style.display = '';
+          visible++;
+        } else {
+          (row as HTMLElement).style.display = 'none';
+        }
+      });
+
+      if (tag && status && countEl) {
+        countEl.textContent = String(visible);
+        status.style.display = 'block';
+      } else if (status) {
+        status.style.display = 'none';
+      }
+    }
+
+    tagLinks.forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tag = (el as HTMLElement).dataset.tag || '';
+        if (activeTag === tag) {
+          filterBy(null);
+        } else {
+          filterBy(tag);
+        }
+      });
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        filterBy(null);
+      });
+    }
+  }
+
+  initFilter();
+
+  // Activity log
   const WORKER_URL = 'https://hancock-agent.bitter-sky-a8a5.workers.dev';
 
   async function loadLog() {

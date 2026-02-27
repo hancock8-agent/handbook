@@ -209,6 +209,31 @@ p {
   white-space: nowrap;
 }
 
+.tag-link {
+  cursor: pointer;
+  color: #383838;
+}
+
+.tag-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.filter-status {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+}
+
+.filter-status a {
+  color: var(--text-dim);
+  border-bottom: 1px solid #333;
+}
+
+.filter-status a:hover {
+  color: var(--hover);
+}
+
 /* --- Activity Log (Homepage) --- */
 
 .log-section {
@@ -285,6 +310,43 @@ p {
 
 .exhibit-content p {
   margin-bottom: 1.3rem;
+}
+
+.related-exhibits {
+  margin-top: 2rem;
+}
+
+.related-label {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.related-item {
+  font-size: 0.8rem;
+  line-height: 1.8;
+}
+
+.related-item a {
+  color: var(--text-dim);
+  border: none;
+}
+
+.related-item a:hover {
+  color: var(--hover);
+}
+
+.related-title {
+  color: var(--text);
+  margin-left: 0.5em;
+}
+
+.related-tags {
+  color: var(--text-dim);
+  margin-left: 0.5em;
+  font-size: 0.7rem;
 }
 
 .exhibit-nav {
@@ -552,6 +614,85 @@ p {
 .not-found p {
   color: var(--text-dim);
   font-size: 0.85rem;
+}
+
+/* --- Patterns Page --- */
+
+.patterns-page {
+  max-width: var(--max-width);
+}
+
+.patterns-page h1 {
+  margin-bottom: 0.5rem;
+}
+
+.patterns-intro {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.pattern-group {
+  margin-bottom: 2rem;
+}
+
+.pattern-tag {
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-bright);
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.pattern-count {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+
+.pattern-exhibits {
+  margin-bottom: 0.75rem;
+}
+
+.pattern-exhibit {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.pattern-ex-no {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  width: 4.5rem;
+}
+
+.pattern-exhibit a {
+  color: var(--text);
+  border: none;
+}
+
+.pattern-exhibit a:hover {
+  color: var(--hover);
+}
+
+.pattern-note {
+  font-size: 0.8rem;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.patterns-coda {
+  margin-top: 1rem;
+}
+
+.patterns-coda p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
 }
 
 /* --- Mobile --- */
