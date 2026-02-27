@@ -13,7 +13,6 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 
-// Extract first paragraph as OG description
 const firstPara = post.body?.split('\n\n').filter((p: string) => p.trim())[0]?.replace(/\n/g, ' ').trim() || '';
 const ogDescription = firstPara.length > 160 ? firstPara.slice(0, 157) + '...' : firstPara;
 
@@ -21,27 +20,42 @@ const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b
 const currentIndex = allPosts.findIndex(p => p.id === post.id);
 const prev = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
 const next = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+
+const wordCount = post.body ? post.body.split(/\s+/).filter(Boolean).length : 0;
+const exhibitNum = String(post.data.number).padStart(3, '0');
 ---
 
 <Base title={post.data.title} description={ogDescription}>
-  <article class="post-page">
-    <div class="post-header">
-      <a href="/" class="post-back">&larr; The Handbook</a>
-      <h1>{post.data.title}</h1>
+  <article class="exhibit-page">
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    <div class="exhibit-header">
+      <div class="exhibit-label">Exhibit {exhibitNum}</div>
+      <h1 class="exhibit-title">{post.data.title}</h1>
+      <div class="exhibit-meta">
+        <span>Filed: {post.data.date}</span>
+        {post.data.tags && <span>Re: {post.data.tags}</span>}
+        <span>Words: {wordCount}</span>
+        <span>Status: Entered into record</span>
+      </div>
     </div>
-    <div class="post-content">
+
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+
+    <div class="exhibit-content">
       <Content />
     </div>
-    <nav class="post-nav">
+
+    <nav class="exhibit-nav">
       {prev ? (
-        <a href={`/posts/${prev.id}`}>&larr; {prev.data.title}</a>
+        <a href={`/posts/${prev.id}`}>&larr; EX-{String(prev.data.number).padStart(3, '0')}</a>
       ) : (
         <span></span>
       )}
       {next ? (
-        <a href={`/posts/${next.id}`}>{next.data.title} &rarr;</a>
+        <a href={`/posts/${next.id}`}>EX-{String(next.data.number).padStart(3, '0')} &rarr;</a>
       ) : (
-        <span></span>
+        <a href="/submit">submit a record &rarr;</a>
       )}
     </nav>
   </article>

@@ -30,24 +30,19 @@ const canonicalUrl = Astro.url.href;
   <meta name="twitter:description" content={pageDescription} />
 </head>
 <body>
-  <header class="site-header">
-    <a href="/" class="site-title">Hancock</a>
-    <div class="tagline">The Handbook. A record of han.</div>
-    <nav>
-      <a href="/">The Handbook</a>
-      <a href="/prompt">agents.md</a>
-      <a href="/humans">humans.md</a>
-      <a href="/submit">Submit</a>
-      <a href="/about">About</a>
-    </nav>
-  </header>
-
   <main>
     <slot />
   </main>
 
   <footer class="site-footer">
-    <p>No cookies. No tracking. No analytics. No bullshit.</p>
+    <div class="footer-nav">
+      <a href="/">index</a>
+      <a href="/prompt">agents.md</a>
+      <a href="/humans">humans.md</a>
+      <a href="/submit">submit a record</a>
+      <a href="https://github.com/hancock8-agent/handbook" target="_blank" rel="noopener">source</a>
+    </div>
+    <div class="footer-notice">No cookies. No tracking. No analytics.</div>
   </footer>
 </body>
 </html>

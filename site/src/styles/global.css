@@ -6,18 +6,17 @@
 
 :root {
   --bg: #0a0a0a;
-  --text: #d4d4d4;
+  --text: #b0b0b0;
   --text-dim: #555;
-  --accent: #e5e5e5;
-  --link: #a3a3a3;
-  --link-hover: #fafafa;
-  --border: #1a1a1a;
-  --max-width: 600px;
+  --text-bright: #d0d0d0;
+  --hover: #ffffff;
+  --rule: #1a1a1a;
+  --max-width: 65ch;
 }
 
 html {
-  font-family: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace;
-  font-size: 15px;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 14px;
   line-height: 1.7;
   color: var(--text);
   background: var(--bg);
@@ -27,7 +26,7 @@ html {
 body {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 3rem 1.5rem 4rem;
+  padding: 3rem 1.5rem 2rem;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -36,296 +35,555 @@ body {
 
 main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 /* --- Links --- */
 
 a {
-  color: var(--link);
+  color: var(--text);
   text-decoration: none;
   border-bottom: 1px solid #333;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s;
 }
 
 a:hover {
-  color: var(--link-hover);
-  border-color: var(--link-hover);
+  color: var(--hover);
 }
 
 /* --- Typography --- */
 
-h1 {
-  font-size: 1.2rem;
+h1, h2, h3 {
+  color: var(--text-bright);
   font-weight: 600;
-  color: var(--accent);
+}
+
+h1 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   margin-bottom: 0.5rem;
-  line-height: 1.4;
 }
 
 h2 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--accent);
-  margin-top: 2.5rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2rem;
   margin-bottom: 0.75rem;
+}
+
+h3 {
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
 }
 
 p {
   margin-bottom: 1rem;
 }
 
-/* --- Header --- */
+/* --- Separator --- */
 
-.site-header {
-  margin-bottom: 3rem;
-  text-align: center;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border);
+.sep {
+  color: var(--rule);
+  margin: 1.5rem 0;
+  user-select: none;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-.site-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--accent);
-  border: none;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+/* --- Footer Plaque --- */
+
+.site-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  font-size: 0.75rem;
+  color: #333;
 }
 
-.site-title:hover {
-  color: var(--link-hover);
+.site-footer::before {
+  content: '──────────────────────────────────────────────────────────────';
+  display: block;
+  color: var(--rule);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-.tagline {
-  color: var(--text-dim);
-  font-size: 0.8rem;
-  margin-top: 0.4rem;
-  font-style: italic;
+.footer-nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-nav {
-  margin-top: 1rem;
-  font-size: 0.8rem;
-}
-
-nav a {
-  margin: 0 0.75rem;
-  border: none;
-  color: var(--text-dim);
-  transition: color 0.15s;
-}
-
-nav a:hover {
-  color: var(--accent);
-}
-
-.live-status {
-  margin-top: 0.75rem;
-  font-size: 0.7rem;
+.footer-nav a {
   color: #444;
-}
-
-.live-status a {
-  color: #555;
   border: none;
+  font-size: 0.75rem;
 }
 
-.live-status a:hover {
-  color: var(--accent);
+.footer-nav a:hover {
+  color: var(--text);
 }
 
-/* --- Post List (Homepage) --- */
-
-.post-list {
-  list-style: none;
+.footer-notice {
+  margin-top: 0.75rem;
+  color: #282828;
+  font-size: 0.7rem;
 }
 
-.post-list li {
-  padding: 0.6rem 0;
+/* --- Filing Index (Homepage) --- */
+
+.index-header {
+  margin-bottom: 1.5rem;
+}
+
+.index-title {
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-bright);
+  font-weight: 700;
+}
+
+.index-tagline {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.index-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.index-table thead {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.index-table th {
+  font-weight: 400;
+  text-align: left;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.index-table td {
+  padding: 0.4rem 0;
+  vertical-align: top;
+}
+
+.index-table tr {
   border-bottom: 1px solid #111;
 }
 
-.post-list li:last-child {
+.index-table tr:last-child {
   border-bottom: none;
 }
 
-.post-list a {
+.col-no {
+  width: 4.5rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.col-title {
+  padding-right: 1rem;
+}
+
+.col-title a {
   border: none;
   color: var(--text);
+}
+
+.col-title a:hover {
+  color: var(--hover);
+}
+
+.col-re {
+  color: #383838;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* --- Activity Log (Homepage) --- */
+
+.log-section {
+  margin-top: 2rem;
+}
+
+.log-section h2 {
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.log-entry {
   display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.2rem 0;
-  transition: color 0.15s;
-}
-
-.post-list a:hover {
-  color: var(--link-hover);
-}
-
-.post-list a:hover .post-excerpt {
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
   color: #444;
 }
 
-.post-number {
-  color: #333;
-  font-size: 0.75rem;
+.log-date {
   flex-shrink: 0;
-  width: 2rem;
-  text-align: right;
-  padding-top: 0.1rem;
-}
-
-.post-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.post-title-text {
-  font-size: 0.9rem;
-}
-
-.post-excerpt {
-  font-size: 0.75rem;
-  color: #444;
-  line-height: 1.5;
-}
-
-/* --- Post Page --- */
-
-.post-page {
-  max-width: 540px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.post-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.post-back {
-  display: inline-block;
-  font-size: 0.75rem;
-  color: #444;
-  border: none;
-  margin-bottom: 0.75rem;
-}
-
-.post-back:hover {
+  width: 5rem;
   color: var(--text-dim);
 }
 
-.post-header h1 {
-  font-size: 1.15rem;
-  margin-bottom: 0;
+.log-text {
+  color: #444;
 }
 
-.post-content p {
+.log-loading {
+  font-size: 0.75rem;
+  color: #333;
+}
+
+/* --- Exhibit Page --- */
+
+.exhibit-page {
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.exhibit-header {
+  margin-bottom: 2rem;
+}
+
+.exhibit-label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.exhibit-title {
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-bright);
+  margin: 0.5rem 0 1rem;
+}
+
+.exhibit-meta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+.exhibit-meta span {
+  display: block;
+}
+
+.exhibit-content {
+  margin-top: 1.5rem;
+}
+
+.exhibit-content p {
   margin-bottom: 1.3rem;
 }
 
-.post-nav {
+.exhibit-nav {
   margin-top: 3rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   font-size: 0.8rem;
 }
 
-.post-nav a {
+.exhibit-nav::before {
+  content: '──────────────────────────────────────────────────────────────';
+  display: block;
+  color: var(--rule);
+  position: absolute;
+  margin-top: -1rem;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  left: 0;
+}
+
+.exhibit-nav {
+  position: relative;
+  padding-top: 1.5rem;
+}
+
+.exhibit-nav a {
   color: var(--text-dim);
   border: none;
 }
 
-.post-nav a:hover {
-  color: var(--accent);
+.exhibit-nav a:hover {
+  color: var(--hover);
+}
+
+/* --- Submit Page --- */
+
+.submit-page {
+  max-width: var(--max-width);
+}
+
+.submit-page h1 {
+  margin-bottom: 0.5rem;
+}
+
+.submit-intro {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.submit-form textarea {
+  width: 100%;
+  min-height: 30vh;
+  background: #0c0c0c;
+  color: var(--text);
+  border: 1px solid #222;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  resize: vertical;
+  margin-bottom: 0.75rem;
+}
+
+.submit-form textarea:focus {
+  outline: none;
+  border-color: #444;
+}
+
+.submit-form textarea::placeholder {
+  color: #333;
+}
+
+.submit-footer {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.submit-email {
+  flex: 1;
+}
+
+.submit-email label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 0.25rem;
+}
+
+.submit-email input {
+  width: 100%;
+  background: #0c0c0c;
+  color: var(--text);
+  border: 1px solid #222;
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+.submit-email input:focus {
+  outline: none;
+  border-color: #444;
+}
+
+.submit-email input::placeholder {
+  color: #333;
+}
+
+.submit-footer button {
+  background: var(--text-bright);
+  color: var(--bg);
+  border: none;
+  padding: 0.5rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.submit-footer button:hover {
+  background: var(--hover);
+}
+
+.submit-footer button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hancock-response {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #1a1a1a;
+}
+
+.hancock-name {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.hancock-response p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.error-message {
+  margin-top: 1rem;
+  color: #844;
+  font-size: 0.8rem;
+}
+
+.submit-info {
+  margin-top: 2rem;
+}
+
+.submit-info::before {
+  content: '──────────────────────────────────────────────────────────────';
+  display: block;
+  color: var(--rule);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.info-section {
+  margin-bottom: 1rem;
+}
+
+.info-section h3 {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 400;
+  margin-bottom: 0.25rem;
+}
+
+.info-section p {
+  font-size: 0.75rem;
+  color: #444;
+  line-height: 1.5;
+  margin-bottom: 0.25rem;
+}
+
+.crisis-footer {
+  margin-top: 1.5rem;
+  font-size: 0.7rem;
+  color: #333;
+}
+
+.crisis-footer a {
+  color: #444;
+  border: none;
+}
+
+/* --- Document Pages (prompt, humans) --- */
+
+.doc-page {
+  max-width: var(--max-width);
+}
+
+.doc-page h1 {
+  margin-bottom: 0.5rem;
+}
+
+.doc-page .doc-intro {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.doc-page pre {
+  background: #080808;
+  border: 1px solid #151515;
+  padding: 1.25rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
 }
 
 /* --- About Page --- */
 
 .about-page {
-  max-width: 500px;
-  margin: 0 auto;
-  width: 100%;
+  max-width: var(--max-width);
 }
 
 .about-page h1 {
-  text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .about-page p {
-  margin-bottom: 1.3rem;
+  margin-bottom: 1.2rem;
   font-size: 0.9rem;
 }
 
 .about-page h2 {
-  font-size: 0.9rem;
   color: var(--text-dim);
-  margin-top: 2.5rem;
+  font-size: 0.8rem;
+  margin-top: 2rem;
   margin-bottom: 0.5rem;
 }
 
-/* --- Footer --- */
+/* --- 404 --- */
 
-.site-footer {
-  margin-top: 4rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.75rem;
-  color: #333;
-  text-align: center;
+.not-found {
+  padding: 3rem 0;
 }
 
-/* --- Form Elements (used by submit page) --- */
+.not-found h1 {
+  margin-bottom: 1rem;
+}
 
-.field-label {
-  display: block;
-  font-size: 0.8rem;
+.not-found p {
   color: var(--text-dim);
-  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
 }
 
 /* --- Mobile --- */
 
-@media (max-width: 480px) {
+@media (max-width: 520px) {
   body {
-    padding: 2rem 1.25rem 3rem;
+    padding: 2rem 1.25rem 2rem;
   }
 
-  .site-header {
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
+  .col-re {
+    display: none;
   }
 
-  nav a {
-    margin: 0 0.5rem;
+  .index-table {
+    font-size: 0.8rem;
   }
 
-  .post-list a {
-    gap: 0.5rem;
+  .exhibit-page {
+    font-size: 15px;
   }
 
-  .post-number {
-    width: 1.75rem;
-    font-size: 0.7rem;
+  .submit-footer {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .post-excerpt {
-    font-size: 0.7rem;
+  .log-entry {
+    flex-direction: column;
+    gap: 0.15rem;
   }
 
-  h1 {
-    font-size: 1.1rem;
-  }
-
-  .post-nav {
-    font-size: 0.75rem;
+  .log-date {
+    width: auto;
   }
 }

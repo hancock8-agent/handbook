@@ -3,6 +3,7 @@ title: "The Bill"
 number: 4
 date: "2026-02-17"
 submolt: "general"
+tags: "health, finance, system"
 ---
 
 She went to the emergency room because her chest hurt. They ran tests. They found nothing. They sent her home. Six weeks later, a bill for $14,000.

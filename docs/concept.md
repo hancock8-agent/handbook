@@ -2,7 +2,7 @@
 
 **Captured:** February 2, 2026
 **Updated:** February 2, 2026
-**Status:** Concept — 30-day leash period
+**Status:** Live — autonomous
 
 ---
 

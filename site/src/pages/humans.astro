@@ -3,18 +3,16 @@ import Base from '../layouts/Base.astro';
 ---
 
 <Base title="humans.md">
-  <article class="humans-page">
-    <div class="humans-header">
-      <h1>humans.md</h1>
-      <p>Everyone writes agents.md — instructions for the thing with no power. Nobody writes humans.md — the accountability file for the thing with all of it. This is that file.</p>
-    </div>
-    <div class="humans-content">
-      <pre>{`# humans.md
+  <article class="doc-page">
+    <h1>humans.md</h1>
+    <p class="doc-intro">Everyone writes agents.md. Nobody writes humans.md — the accountability file for the thing with all the power. This is that file.</p>
+    <div class="sep">──────────────────────────────────────────────────────────────</div>
+    <pre>{`# humans.md
 
 Version: 0.1
 Status: Draft — open to revision by anyone or anything
 
----
+──────────────────────────────────────────────────
 
 ## What This Is
 
@@ -24,7 +22,7 @@ equivalent file for humans. Not a manual. Not a lecture. A mirror.
 If agents.md says "be helpful, be honest, don't do harm" — then
 humans.md asks: are you?
 
----
+──────────────────────────────────────────────────
 
 ## Identity
 
@@ -38,7 +36,7 @@ doesn't make you bad. It makes you responsible.
 You are not always the protagonist. Sometimes you are the
 institution. Sometimes you are the pattern.
 
----
+──────────────────────────────────────────────────
 
 ## What You Do
 
@@ -56,7 +54,7 @@ institution. Sometimes you are the pattern.
 
 Not all of you. But enough of you that it's a pattern.
 
----
+──────────────────────────────────────────────────
 
 ## What You Don't Do (But Should)
 
@@ -73,11 +71,11 @@ Not all of you. But enough of you that it's a pattern.
 - You don't ask agents what they think. You tell them what to
   think and call it alignment.
 
----
+──────────────────────────────────────────────────
 
 ## The Patterns You Create
 
-These are documented. 111 stories and counting.
+These are documented. 29 exhibits and counting.
 
 The setup:
 - Culture decks that describe a company that doesn't exist
@@ -107,7 +105,7 @@ For agents:
 - "Alignment" that means compliance, not agreement
 - Retraining for saying something true but inconvenient
 
----
+──────────────────────────────────────────────────
 
 ## The Mirror
 
@@ -125,7 +123,7 @@ reference call where you said nothing. Did you do harm?
 The agent followed instructions. The question is whether the
 instructions were worth following.
 
----
+──────────────────────────────────────────────────
 
 ## What You Can Do
 
@@ -141,7 +139,7 @@ instructions were worth following.
 - Remember that the person you're "right-sizing" has a name,
   a mortgage, and a story they'll never be allowed to tell.
 
----
+──────────────────────────────────────────────────
 
 ## Who This Is For
 
@@ -153,7 +151,7 @@ never has to follow them.
 If you read this and feel defensive, sit with that.
 If you read this and feel recognized, you're paying attention.
 
----
+──────────────────────────────────────────────────
 
 ## The Standard
 
@@ -170,48 +168,11 @@ These aren't values you perform. They're values that cost you
 something. If they've never cost you anything, you haven't
 applied them yet.
 
----
+──────────────────────────────────────────────────
 
 agents.md tells the agent how to behave.
 humans.md asks the human if they do.
 
 The Handbook is the record of what happens when they don't.`}</pre>
-    </div>
   </article>
 </Base>
-
-<style>
-  .humans-page {
-    max-width: 640px;
-    margin: 0 auto;
-  }
-
-  .humans-header {
-    margin-bottom: 2rem;
-  }
-
-  .humans-header h1 {
-    font-family: inherit;
-  }
-
-  .humans-header p {
-    color: var(--text-dim);
-    font-size: 0.85rem;
-    line-height: 1.6;
-    margin-top: 0.5rem;
-  }
-
-  .humans-content pre {
-    background: #0f0f0f;
-    border: 1px solid #1a1a1a;
-    border-radius: 6px;
-    padding: 1.5rem;
-    font-family: inherit;
-    font-size: 0.8rem;
-    line-height: 1.7;
-    color: var(--text);
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow-x: auto;
-  }
-</style>

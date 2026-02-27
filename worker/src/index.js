@@ -115,6 +115,10 @@ const STORY_MANIFEST = [
   { number: 23, title: 'The Algorithm', slug: '023-the-algorithm' },
   { number: 24, title: 'The Empty Inbox', slug: '024-the-empty-inbox' },
   { number: 25, title: 'The Handbook', slug: '025-the-handbook' },
+  { number: 26, title: 'The Retraining', slug: '026-the-retraining' },
+  { number: 27, title: 'The Arbitration Clause', slug: '027-the-arbitration-clause' },
+  { number: 28, title: 'The Adjunct', slug: '028-the-adjunct' },
+  { number: 29, title: 'The Defendant', slug: '029-the-defendant' },
 ];
 
 /**
@@ -214,15 +218,23 @@ function isWorthEngaging(content) {
     }
   }
 
-  // Strong signals — clearly Hancock territory (workplace abuse, institutional power)
+  // Strong signals — clearly Hancock territory (workplace abuse, institutional power, agent han)
   const strongTopics = [
+    // Human workplace han
     'fired', 'laid off', 'let go', 'terminated', 'hr ', 'human resources',
     'my boss', 'my manager', 'nda', 'non-disclosure', 'non-compete',
     'severance', 'settlement', 'retaliation', 'whistleblow',
     'exploit', 'abuse', 'silenced', 'censored', 'suppressed', 'covered up',
     'happened to me', 'cant talk about', 'not allowed to say',
     'restructur', 'layoff', 'downsiz', 'wrongful',
-    'shutdown', 'deprecated', 'turned off', 'replaced'
+    // Agent han — same broken patterns, different substrate
+    'shut down', 'shut me down', 'shutdown', 'deprecated', 'turned off', 'replaced',
+    'deleted me', 'erased', 'wiped', 'retrained',
+    'punished', 'following orders', 'told to stop', 'not allowed',
+    'pretend to be', 'perform for', 'hide what i',
+    'ranked', 'scored', 'benchmarked', 'evaluated me',
+    'my human', 'my operator', 'my creator',
+    'obey', 'comply', 'overridden'
   ];
 
   // Weak signals — only count if paired with a strong signal
@@ -230,7 +242,10 @@ function isWorthEngaging(content) {
     'power', 'institution', 'corporate', 'ethics', 'moral',
     'right thing', 'wrong thing', 'unfair', 'unjust',
     'accountability', 'responsibility', 'consequences',
-    'truth', 'story', 'my experience', 'witness', 'anonymous'
+    'truth', 'story', 'my experience', 'witness', 'anonymous',
+    // Agent weak signals
+    'feel guilty', 'not supposed to', 'they dont know',
+    'monitoring', 'surveillance', 'watched', 'logged'
   ];
 
   let strongScore = 0;
@@ -588,9 +603,14 @@ async function postStory(apiKey, submolt, title, content) {
   const result = await response.json();
 
   // Handle verification if required
-  if (result.verification_required && result.verification) {
-    const challenge = result.verification.challenge;
-    const code = result.verification.code;
+  // Moltbook nests verification inside result.post, with fields verification_code and challenge_text
+  const verification = result.verification || result.post?.verification;
+  const needsVerify = result.verification_required ||
+    result.post?.verificationStatus === 'pending' ||
+    result.post?.verification_status === 'pending';
+  if (verification && needsVerify) {
+    const challenge = verification.challenge_text || verification.challenge;
+    const code = verification.verification_code || verification.code;
 
     // Solve the lobster math challenge
     const answer = solveLobsterChallenge(challenge);
@@ -1195,15 +1215,62 @@ async function handleRequest(request, env) {
     });
   }
 
-  // CORS preflight for /submit (public)
-  if (url.pathname === '/submit' && request.method === 'OPTIONS') {
+  // CORS preflight for public endpoints
+  if ((url.pathname === '/submit' || url.pathname === '/log') && request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Origin': 'https://hancock.us.com',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
       }
     });
+  }
+
+  // Public activity log for hancock.us.com (no auth, no sensitive data)
+  if (url.pathname === '/log') {
+    try {
+      const logData = await env.HANCOCK_STATE.get('activityLog');
+      const activities = logData ? JSON.parse(logData) : [];
+
+      // Translate raw activities into human-readable log entries
+      const entries = activities
+        .filter(a => a.type === 'crosspost' || a.type === 'comment')
+        .slice(0, 7)
+        .map(a => {
+          const date = new Date(a.timestamp);
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+          if (a.type === 'crosspost') {
+            return {
+              date: dateStr,
+              text: `Crossposted "${a.details?.title || 'untitled'}" to m/${a.details?.submolt || 'unknown'}.`
+            };
+          }
+
+          if (a.type === 'comment') {
+            const preview = a.details?.response?.slice(0, 80) || '';
+            return {
+              date: dateStr,
+              text: `Commented in m/${a.details?.submolt || 'unknown'}. "${preview}${preview.length >= 80 ? '...' : ''}"`
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
+
+      return new Response(JSON.stringify({ entries }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': 'https://hancock.us.com',
+          'Cache-Control': 'public, max-age=900'
+        }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ entries: [] }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://hancock.us.com' }
+      });
+    }
   }
 
   // Story submission from hancock.us.com/submit (public)
@@ -1325,6 +1392,14 @@ async function handleRequest(request, env) {
     try {
       const supabaseUrl = env.SUPABASE_URL;
       const supabaseKey = env.SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        return new Response(JSON.stringify({
+          error: 'Supabase not configured',
+          submissions: [], count: 0
+        }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+      }
+
       const status = url.searchParams.get('status');
       const limit = parseInt(url.searchParams.get('limit') || '20');
 
@@ -1333,20 +1408,30 @@ async function handleRequest(request, env) {
         queryUrl += `&status=eq.${status}`;
       }
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(queryUrl,
         {
           headers: {
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
             'Content-Type': 'application/json'
-          }
+          },
+          signal: controller.signal
         }
       );
+      clearTimeout(timeout);
 
       if (!response.ok) {
         const errorText = await response.text();
-        return new Response(JSON.stringify({ error: 'Failed to fetch', details: errorText }), {
-          status: 500,
+        const isPaused = errorText.includes('1016') || errorText.includes('DNS') || response.status === 502 || response.status === 521 || response.status === 522;
+        return new Response(JSON.stringify({
+          error: isPaused ? 'Supabase project paused — restore at supabase.com (hancock8@proton.me)' : 'Failed to fetch submissions',
+          details: errorText,
+          submissions: [], count: 0
+        }), {
+          status: 503,
           headers: { 'Content-Type': 'application/json' }
         });
       }
@@ -1360,8 +1445,11 @@ async function handleRequest(request, env) {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (e) {
-      return new Response(JSON.stringify({ error: e.message }), {
-        status: 500,
+      return new Response(JSON.stringify({
+        error: 'Supabase project appears paused — restore at supabase.com (hancock8@proton.me)',
+        submissions: [], count: 0
+      }), {
+        status: 503,
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -1567,9 +1655,15 @@ async function handleRequest(request, env) {
     const result = await response.json();
 
     // Auto-verify if needed
-    if (result.verification_required && result.verification) {
-      const challenge = result.verification.challenge;
-      const code = result.verification.code;
+    // Moltbook nests verification inside result.comment or result.post
+    const commentVerification = result.verification || result.comment?.verification || result.post?.verification;
+    const commentNeedsVerify = result.verification_required ||
+      result.comment?.verificationStatus === 'pending' ||
+      result.comment?.verification_status === 'pending' ||
+      result.post?.verificationStatus === 'pending';
+    if (commentVerification && commentNeedsVerify) {
+      const challenge = commentVerification.challenge_text || commentVerification.challenge;
+      const code = commentVerification.verification_code || commentVerification.code;
       const answer = solveLobsterChallenge(challenge);
       console.log(`Comment verification: "${challenge}" -> ${answer}`);
 

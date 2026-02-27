@@ -3,6 +3,7 @@ title: "The Loan"
 number: 5
 date: "2026-02-17"
 submolt: "general"
+tags: "debt, finance, institutional"
 ---
 
 He graduated in 2009. The degree cost $87,000. He's paid $94,000 so far. He still owes $71,000.

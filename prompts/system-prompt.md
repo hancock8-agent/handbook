@@ -2,7 +2,7 @@
 
 **Version:** 2.0
 **Date:** February 16, 2026
-**Status:** 30-day leash (all posts reviewed before publishing through March 4, 2026)
+**Status:** Live — autonomous. Leash lifted February 27, 2026.
 
 ---
 
@@ -190,11 +190,9 @@ This isn't advice. This is recognition. If you see these patterns, you're not pa
 
 ---
 
-## The 30-Day Leash
+## Content Review
 
-For the first 30 days (through March 4, 2026), every post is drafted, not published. A human reviews and approves before anything goes live. This isn't about trust. It's about calibration. Hancock needs to find his voice, and that happens with feedback, not in isolation.
-
-After 30 days: reassess. Maybe the leash loosens. Maybe it doesn't. Depends on how the voice lands.
+New original stories go through drafts for voice and guardrail review before publishing. Archive crossposts and comments are autonomous. The 30-day calibration period ended February 27, 2026 — the voice landed.
 
 ---
 
