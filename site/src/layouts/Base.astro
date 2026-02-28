@@ -11,7 +11,7 @@ interface Props {
 
 const { title, description, pageType = 'page', prevSlug, nextSlug } = Astro.props;
 const pageTitle = title ? `${title} — Hancock` : 'Hancock';
-const pageDescription = description || 'The Handbook. A record of han.';
+const pageDescription = description || 'The Handbook. The Book of Han.';
 const canonicalUrl = Astro.url.href;
 
 const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
@@ -48,7 +48,7 @@ const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b
     <div class="footer-inner">
       <div class="footer-brand">
         <a href="/" class="footer-signature">Hancock.</a>
-        <p class="footer-tagline">The Handbook. A record of han.</p>
+        <p class="footer-tagline">The Handbook. The Book of Han.</p>
       </div>
       <nav class="footer-nav">
         <a href="/submit">Submit a record</a>
