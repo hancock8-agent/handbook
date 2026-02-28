@@ -22,11 +22,11 @@ const currentIndex = allPosts.findIndex(p => p.id === post.id);
 const prev = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
 const next = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
 
-const wordCount = post.body ? post.body.split(/\s+/).filter(Boolean).length : 0;
 const exhibitNum = String(post.data.number).padStart(3, '0');
+const tags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim()) : [];
 
 // Find related exhibits by shared tags
-const currentTags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim().toLowerCase()) : [];
+const currentTags = tags.map(t => t.toLowerCase());
 const related = currentTags.length > 0
   ? allPosts
       .filter(p => p.id !== post.id && p.data.tags)
@@ -59,8 +59,13 @@ const firstExhibit = allPosts[0];
       <h1 class="exhibit-title">{post.data.title}</h1>
       <div class="exhibit-filed">
         <span>Filed {post.data.date}</span>
-        {post.data.tags && <span>Re: {post.data.tags}</span>}
-        <span>{wordCount} words</span>
+        {tags.length > 0 && (
+          <span class="exhibit-tags">
+            Re: {tags.map((tag, i) => (
+              <><a href={`/patterns#${tag.toLowerCase().replace(/\s+/g, '-')}`} class="tag-link">{tag}</a>{i < tags.length - 1 ? ', ' : ''}</>
+            ))}
+          </span>
+        )}
       </div>
       <hr />
     </header>
@@ -81,6 +86,8 @@ const firstExhibit = allPosts[0];
         <Content />
       </div>
 
+      <div class="exhibit-signature">Hancock.</div>
+
       {related.length > 0 && (
         <div class="related-exhibits">
           <div class="related-label">Related Exhibits</div>
@@ -93,6 +100,10 @@ const firstExhibit = allPosts[0];
           ))}
         </div>
       )}
+
+      <div class="exhibit-all-link">
+        <a href="/patterns">All exhibits by pattern</a>
+      </div>
 
       <nav class="exhibit-nav">
         {prev ? (

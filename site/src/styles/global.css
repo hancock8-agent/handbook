@@ -252,6 +252,15 @@ hr.light {
   color: inherit;
 }
 
+.story-card-brand {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-ghost);
+  margin-bottom: auto;
+}
+
 .story-card-num {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 0.61rem;
@@ -527,6 +536,16 @@ hr.light {
   margin-right: 0;
 }
 
+.exhibit-tags .tag-link {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.exhibit-tags .tag-link:hover {
+  color: var(--accent-hover);
+}
+
 /* --- Sidebar (left margin, desktop only) --- */
 
 .exhibit-sidebar {
@@ -577,14 +596,24 @@ hr.light {
   counter-increment: para;
   position: relative;
   margin-bottom: 1.6rem;
-  font-size: 1rem;
+  font-size: 1.15rem;
   line-height: 1.78;
 }
 
 .exhibit-content p:first-child {
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   line-height: 1.7;
   color: var(--text-bright);
+}
+
+.exhibit-signature {
+  font-family: 'Caveat', cursive;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  text-align: right;
 }
 
 /* --- Related Exhibits --- */
@@ -629,6 +658,22 @@ hr.light {
 .related-tags {
   color: var(--text-dim);
   font-size: 0.61rem;
+}
+
+/* --- All Exhibits Link --- */
+
+.exhibit-all-link {
+  margin-top: 1.5rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
+}
+
+.exhibit-all-link a {
+  color: var(--text-dim);
+}
+
+.exhibit-all-link a:hover {
+  color: var(--text);
 }
 
 /* --- Exhibit Nav --- */

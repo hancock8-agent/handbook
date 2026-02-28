@@ -64,7 +64,7 @@ const notes: Record<string, string> = {
     <hr />
 
     {sortedTags.map(([tag, exhibits]) => (
-      <div class="pattern-group">
+      <div class="pattern-group" id={tag.toLowerCase().replace(/\s+/g, '-')}>
         <h2 class="pattern-tag">{tag} <span class="pattern-count">({exhibits.length} {exhibits.length === 1 ? 'exhibit' : 'exhibits'})</span></h2>
         <div class="pattern-exhibits">
           {exhibits.map((ex) => (

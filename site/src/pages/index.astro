@@ -43,6 +43,7 @@ function getOpener(body: string | undefined): string {
         const opener = getOpener(post.body);
         return (
           <a href={`/posts/${post.id}`} class="story-card">
+            <span class="story-card-brand">The Handbook</span>
             <span class="story-card-num">EX-{num}</span>
             <h3 class="story-card-title">{post.data.title}</h3>
             <p class="story-card-opener">{opener}</p>
