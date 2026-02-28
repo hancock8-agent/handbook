@@ -1,32 +1,45 @@
+/* ================================================================
+   THE HANDBOOK — hancock.us.com
+   Deposition transcript aesthetic. Serif body. Margin gutter.
+   ================================================================ */
+
+/* --- Custom Properties --- */
+
+:root {
+  --bg:           #0c0c0e;
+  --bg-surface:   #121216;
+  --bg-inset:     #0a0a0c;
+  --text:         #c8c5be;
+  --text-bright:  #e8e5de;
+  --text-dim:     #6b6860;
+  --text-ghost:   #3a3835;
+  --accent:       #8b3a3a;
+  --accent-hover: #a84c4c;
+  --accent-dim:   #5c2828;
+  --rule:         #1e1d1b;
+  --rule-light:   #2a2826;
+}
+
+/* --- Reset --- */
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-:root {
-  --bg: #0a0a0a;
-  --text: #b0b0b0;
-  --text-dim: #555;
-  --text-bright: #d0d0d0;
-  --hover: #ffffff;
-  --rule: #1a1a1a;
-  --max-width: 65ch;
-}
+/* --- Typography --- */
 
 html {
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'Liberation Mono', monospace;
-  font-size: 14px;
-  line-height: 1.7;
+  font-family: 'Source Serif 4', 'Georgia', 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.78;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 
 body {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 3rem 1.5rem 2rem;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -37,35 +50,40 @@ main {
   flex: 1;
 }
 
+/* UI font utility */
+.ui-font {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
 /* --- Links --- */
 
 a {
-  color: var(--text);
+  color: var(--accent);
   text-decoration: none;
-  border-bottom: 1px solid #333;
   transition: color 0.15s;
 }
 
 a:hover {
-  color: var(--hover);
+  color: var(--accent-hover);
 }
 
-/* --- Typography --- */
+/* --- Typography Scale --- */
 
 h1, h2, h3 {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-bright);
   font-weight: 600;
 }
 
 h1 {
-  font-size: 1rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   margin-bottom: 0.5rem;
 }
 
 h2 {
-  font-size: 0.85rem;
+  font-size: 0.67rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-top: 2rem;
@@ -73,7 +91,9 @@ h2 {
 }
 
 h3 {
-  font-size: 0.8rem;
+  font-size: 0.61rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin-bottom: 0.5rem;
 }
 
@@ -81,44 +101,43 @@ p {
   margin-bottom: 1rem;
 }
 
-/* --- Separator --- */
+/* --- Rules (replaces ASCII separators) --- */
 
-.sep {
-  color: var(--rule);
+hr {
+  border: none;
+  border-top: 1px solid var(--rule);
   margin: 1.5rem 0;
-  user-select: none;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
-/* --- Footer Plaque --- */
+hr.light {
+  border-color: var(--rule-light);
+}
+
+/* --- Footer --- */
 
 .site-footer {
   margin-top: 3rem;
-  padding-top: 1rem;
-  font-size: 0.75rem;
-  color: #333;
+  padding: 1.5rem 2rem 2rem;
+  max-width: 50rem;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
 
-.site-footer::before {
-  content: '──────────────────────────────────────────────────────────────';
-  display: block;
-  color: var(--rule);
-  margin-bottom: 0.75rem;
-  overflow: hidden;
-  white-space: nowrap;
+.site-footer hr {
+  margin-bottom: 1rem;
 }
 
 .footer-nav {
   display: flex;
-  gap: 1rem;
+  gap: 1.25rem;
   flex-wrap: wrap;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
 }
 
 .footer-nav a {
-  color: #444;
-  border: none;
-  font-size: 0.75rem;
+  color: var(--text-dim);
 }
 
 .footer-nav a:hover {
@@ -127,286 +146,402 @@ p {
 
 .footer-notice {
   margin-top: 0.75rem;
-  color: #282828;
-  font-size: 0.7rem;
+  color: var(--text-ghost);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.61rem;
 }
 
-/* --- Filing Index (Homepage) --- */
+/* ================================================================
+   EXHIBIT PAGE — The deposition transcript
+   ================================================================ */
+
+.exhibit-layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 38rem);
+  gap: 3rem;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 2rem 0;
+}
+
+/* --- Case Header --- */
+
+.case-header {
+  grid-column: 1 / -1;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  max-width: 38rem;
+  margin-left: auto;
+  margin-right: 0;
+  width: 100%;
+}
+
+.case-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.61rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.case-header hr {
+  margin: 0.75rem 0;
+  border-color: var(--rule-light);
+}
+
+.case-header-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.67rem;
+  color: var(--text-dim);
+  margin-bottom: 1.25rem;
+}
+
+.exhibit-number {
+  letter-spacing: 0.04em;
+}
+
+.han-label {
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+.exhibit-title {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 1.33rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.exhibit-filed {
+  font-size: 0.67rem;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
+
+.exhibit-filed span {
+  margin-right: 1rem;
+}
+
+.exhibit-filed span:last-child {
+  margin-right: 0;
+}
+
+/* --- Sidebar (left margin, desktop only) --- */
+
+.exhibit-sidebar {
+  display: none;
+}
+
+.sidebar-context {
+  position: sticky;
+  top: 2rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.67rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.sidebar-context p {
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-links {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sidebar-links a {
+  color: var(--text-ghost);
+  font-size: 0.67rem;
+}
+
+.sidebar-links a:hover {
+  color: var(--text-dim);
+}
+
+/* --- Mobile context (shown < 1024px) --- */
+
+.mobile-context {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.mobile-context a {
+  color: var(--text-dim);
+}
+
+.mobile-context a:hover {
+  color: var(--text);
+}
+
+/* --- Story Content --- */
+
+.exhibit-main {
+  min-width: 0;
+}
+
+.exhibit-content {
+  counter-reset: para;
+  margin-top: 1rem;
+}
+
+.exhibit-content p {
+  counter-increment: para;
+  position: relative;
+  margin-bottom: 1.6rem;
+  font-size: 1rem;
+  line-height: 1.78;
+}
+
+/* --- Related Exhibits --- */
+
+.related-exhibits {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+.related-label {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-dim);
+  font-size: 0.61rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.related-item {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
+  line-height: 1.8;
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.related-item a {
+  color: var(--text-dim);
+}
+
+.related-item a:hover {
+  color: var(--accent-hover);
+}
+
+.related-title {
+  color: var(--text);
+}
+
+.related-tags {
+  color: var(--text-dim);
+  font-size: 0.61rem;
+}
+
+/* --- Exhibit Nav --- */
+
+.exhibit-nav {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
+}
+
+.exhibit-nav a {
+  color: var(--text-dim);
+}
+
+.exhibit-nav a:hover {
+  color: var(--text);
+}
+
+/* --- Exhibit Footer Context --- */
+
+.exhibit-footer-context {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.61rem;
+  color: var(--text-ghost);
+  line-height: 1.8;
+}
+
+.exhibit-footer-context a {
+  color: var(--text-dim);
+}
+
+.exhibit-footer-context a:hover {
+  color: var(--text);
+}
+
+/* ================================================================
+   INDEX PAGE
+   ================================================================ */
+
+.index-page {
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: 3rem 2rem 2rem;
+}
 
 .index-header {
   margin-bottom: 1.5rem;
 }
 
 .index-title {
-  font-size: 1.1rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   color: var(--text-bright);
   font-weight: 700;
 }
 
 .index-tagline {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-style: italic;
   color: var(--text-dim);
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
+  font-size: 0.89rem;
+  margin-top: 0.35rem;
 }
 
-.index-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.index-table thead {
-  color: var(--text-dim);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.index-table th {
-  font-weight: 400;
-  text-align: left;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid var(--rule);
-}
-
-.index-table td {
-  padding: 0.4rem 0;
-  vertical-align: top;
-}
-
-.index-table tr {
-  border-bottom: 1px solid #111;
-}
-
-.index-table tr:last-child {
-  border-bottom: none;
-}
-
-.col-no {
-  width: 4.5rem;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.col-title {
-  padding-right: 1rem;
-}
-
-.col-title a {
-  border: none;
-  color: var(--text);
-}
-
-.col-title a:hover {
-  color: var(--hover);
-}
-
-.col-re {
-  color: #383838;
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.tag-link {
-  cursor: pointer;
-  color: #383838;
-}
-
-.tag-link:hover {
-  color: var(--text);
-  text-decoration: underline;
-}
+/* --- Tag Filter Status --- */
 
 .filter-status {
-  font-size: 0.75rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.67rem;
   color: var(--text-dim);
   margin-bottom: 0.75rem;
 }
 
 .filter-status a {
   color: var(--text-dim);
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--rule-light);
 }
 
 .filter-status a:hover {
-  color: var(--hover);
+  color: var(--text);
 }
 
-/* --- Activity Log (Homepage) --- */
+/* --- Exhibit List (CSS Grid, not table) --- */
 
-.log-section {
-  margin-top: 2rem;
+.index-list {
+  list-style: none;
 }
 
-.log-section h2 {
-  font-size: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.log-entry {
-  display: flex;
+.index-list-header {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr auto;
   gap: 1rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.75rem;
-  color: #444;
-}
-
-.log-date {
-  flex-shrink: 0;
-  width: 5rem;
-  color: var(--text-dim);
-}
-
-.log-text {
-  color: #444;
-}
-
-.log-loading {
-  font-size: 0.75rem;
-  color: #333;
-}
-
-/* --- Exhibit Page --- */
-
-.exhibit-page {
-  font-size: 16px;
-  line-height: 1.75;
-}
-
-.exhibit-header {
-  margin-bottom: 2rem;
-}
-
-.exhibit-label {
-  font-size: 0.8rem;
-  color: var(--text-dim);
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.61rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-}
-
-.exhibit-title {
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-bright);
-  margin: 0.5rem 0 1rem;
-}
-
-.exhibit-meta {
-  font-size: 0.75rem;
   color: var(--text-dim);
-  line-height: 1.8;
 }
 
-.exhibit-meta span {
-  display: block;
+.index-item {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr auto;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
 }
 
-.exhibit-content {
-  margin-top: 1.5rem;
+.index-item:last-child {
+  border-bottom: none;
 }
 
-.exhibit-content p {
-  margin-bottom: 1.3rem;
-}
-
-.related-exhibits {
-  margin-top: 2rem;
-}
-
-.related-label {
+.col-no {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
   color: var(--text-dim);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-.related-item {
-  font-size: 0.8rem;
-  line-height: 1.8;
+.col-title {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 0.89rem;
 }
 
-.related-item a {
-  color: var(--text-dim);
-  border: none;
-}
-
-.related-item a:hover {
-  color: var(--hover);
-}
-
-.related-title {
+.col-title a {
   color: var(--text);
-  margin-left: 0.5em;
 }
 
-.related-tags {
-  color: var(--text-dim);
-  margin-left: 0.5em;
-  font-size: 0.7rem;
+.col-title a:hover {
+  color: var(--accent-hover);
 }
 
-.exhibit-nav {
-  margin-top: 3rem;
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-}
-
-.exhibit-nav::before {
-  content: '──────────────────────────────────────────────────────────────';
-  display: block;
-  color: var(--rule);
-  position: absolute;
-  margin-top: -1rem;
-  overflow: hidden;
+.col-re {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-ghost);
+  font-size: 0.61rem;
+  text-align: right;
   white-space: nowrap;
-  width: 100%;
-  left: 0;
 }
 
-.exhibit-nav {
-  position: relative;
-  padding-top: 1.5rem;
+.tag-link {
+  cursor: pointer;
+  color: var(--text-ghost);
+  transition: color 0.15s;
 }
 
-.exhibit-nav a {
+.tag-link:hover {
   color: var(--text-dim);
-  border: none;
 }
 
-.exhibit-nav a:hover {
-  color: var(--hover);
-}
-
-/* --- Submit Page --- */
+/* ================================================================
+   SUBMIT PAGE
+   ================================================================ */
 
 .submit-page {
-  max-width: var(--max-width);
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 3rem 2rem 2rem;
 }
 
 .submit-page h1 {
+  font-size: 0.72rem;
   margin-bottom: 0.5rem;
 }
 
 .submit-intro {
   color: var(--text-dim);
-  font-size: 0.85rem;
+  font-size: 0.89rem;
   margin-bottom: 1.5rem;
 }
 
 .submit-form textarea {
   width: 100%;
   min-height: 30vh;
-  background: #0c0c0c;
+  background: var(--bg-inset);
   color: var(--text);
-  border: 1px solid #222;
+  border: 1px solid var(--rule-light);
   padding: 1rem;
-  font-family: inherit;
-  font-size: 0.85rem;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 0.89rem;
   line-height: 1.7;
   resize: vertical;
   margin-bottom: 0.75rem;
@@ -414,11 +549,11 @@ p {
 
 .submit-form textarea:focus {
   outline: none;
-  border-color: #444;
+  border-color: var(--text-dim);
 }
 
 .submit-form textarea::placeholder {
-  color: #333;
+  color: var(--text-ghost);
 }
 
 .submit-footer {
@@ -433,28 +568,29 @@ p {
 
 .submit-email label {
   display: block;
-  font-size: 0.75rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.67rem;
   color: var(--text-dim);
   margin-bottom: 0.25rem;
 }
 
 .submit-email input {
   width: 100%;
-  background: #0c0c0c;
+  background: var(--bg-inset);
   color: var(--text);
-  border: 1px solid #222;
+  border: 1px solid var(--rule-light);
   padding: 0.5rem 0.75rem;
-  font-family: inherit;
-  font-size: 0.8rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
 }
 
 .submit-email input:focus {
   outline: none;
-  border-color: #444;
+  border-color: var(--text-dim);
 }
 
 .submit-email input::placeholder {
-  color: #333;
+  color: var(--text-ghost);
 }
 
 .submit-footer button {
@@ -462,8 +598,8 @@ p {
   color: var(--bg);
   border: none;
   padding: 0.5rem 1.25rem;
-  font-family: inherit;
-  font-size: 0.8rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   text-transform: uppercase;
@@ -471,7 +607,7 @@ p {
 }
 
 .submit-footer button:hover {
-  background: var(--hover);
+  background: #fff;
 }
 
 .submit-footer button:disabled {
@@ -482,12 +618,13 @@ p {
 .hancock-response {
   margin-top: 1.5rem;
   padding: 1rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid var(--rule-light);
 }
 
 .hancock-name {
   display: block;
-  font-size: 0.7rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.61rem;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -495,28 +632,22 @@ p {
 }
 
 .hancock-response p {
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: 0.89rem;
+  line-height: 1.7;
   margin: 0;
 }
 
 .error-message {
   margin-top: 1rem;
-  color: #844;
-  font-size: 0.8rem;
+  color: var(--accent);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
 }
 
 .submit-info {
   margin-top: 2rem;
-}
-
-.submit-info::before {
-  content: '──────────────────────────────────────────────────────────────';
-  display: block;
-  color: var(--rule);
-  margin-bottom: 1rem;
-  overflow: hidden;
-  white-space: nowrap;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
 }
 
 .info-section {
@@ -524,36 +655,36 @@ p {
 }
 
 .info-section h3 {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   font-weight: 400;
   margin-bottom: 0.25rem;
 }
 
 .info-section p {
-  font-size: 0.75rem;
-  color: #444;
-  line-height: 1.5;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.6;
   margin-bottom: 0.25rem;
 }
 
 .crisis-footer {
   margin-top: 1.5rem;
-  font-size: 0.7rem;
-  color: #333;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.61rem;
+  color: var(--text-ghost);
 }
 
 .crisis-footer a {
-  color: #444;
-  border: none;
+  color: var(--text-dim);
 }
 
-/* --- Document Pages (prompt, humans) --- */
+/* ================================================================
+   DOCUMENT PAGES (agents.md, humans.md, data)
+   ================================================================ */
 
 .doc-page {
-  max-width: var(--max-width);
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 3rem 2rem 2rem;
 }
 
 .doc-page h1 {
@@ -562,16 +693,16 @@ p {
 
 .doc-page .doc-intro {
   color: var(--text-dim);
-  font-size: 0.85rem;
+  font-size: 0.89rem;
   margin-bottom: 1.5rem;
 }
 
 .doc-page pre {
-  background: #080808;
-  border: 1px solid #151515;
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
   padding: 1.25rem;
-  font-family: inherit;
-  font-size: 0.8rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
   line-height: 1.7;
   color: var(--text);
   white-space: pre-wrap;
@@ -579,10 +710,32 @@ p {
   overflow-x: auto;
 }
 
-/* --- About Page --- */
+.data-block {
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.67rem;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.data-note {
+  color: var(--text-dim);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.61rem;
+  margin-top: 1rem;
+}
+
+/* ================================================================
+   ABOUT PAGE
+   ================================================================ */
 
 .about-page {
-  max-width: var(--max-width);
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 3rem 2rem 2rem;
 }
 
 .about-page h1 {
@@ -591,52 +744,24 @@ p {
 
 .about-page p {
   margin-bottom: 1.2rem;
-  font-size: 0.9rem;
+  font-size: 0.94rem;
 }
 
 .about-page h2 {
   color: var(--text-dim);
-  font-size: 0.8rem;
+  font-size: 0.67rem;
   margin-top: 2rem;
   margin-bottom: 0.5rem;
 }
 
-/* --- 404 --- */
-
-.not-found {
-  padding: 3rem 0;
-}
-
-.not-found h1 {
-  margin-bottom: 1rem;
-}
-
-.not-found p {
-  color: var(--text-dim);
-  font-size: 0.85rem;
-}
-
-.data-block {
-  background: #080808;
-  border: 1px solid #151515;
-  padding: 1.25rem;
-  font-family: inherit;
-  font-size: 0.75rem;
-  line-height: 1.8;
-  overflow-x: auto;
-  white-space: pre;
-}
-
-.data-note {
-  color: var(--text-dim);
-  font-size: 0.7rem;
-  margin-top: 1rem;
-}
-
-/* --- Patterns Page --- */
+/* ================================================================
+   PATTERNS PAGE
+   ================================================================ */
 
 .patterns-page {
-  max-width: var(--max-width);
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 3rem 2rem 2rem;
 }
 
 .patterns-page h1 {
@@ -645,7 +770,7 @@ p {
 
 .patterns-intro {
   color: var(--text-dim);
-  font-size: 0.85rem;
+  font-size: 0.89rem;
   margin-bottom: 0;
 }
 
@@ -654,7 +779,8 @@ p {
 }
 
 .pattern-tag {
-  font-size: 0.85rem;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 0.94rem;
   text-transform: none;
   letter-spacing: 0;
   color: var(--text-bright);
@@ -665,8 +791,9 @@ p {
 
 .pattern-count {
   color: var(--text-dim);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-weight: 400;
-  font-size: 0.75rem;
+  font-size: 0.67rem;
 }
 
 .pattern-exhibits {
@@ -674,7 +801,8 @@ p {
 }
 
 .pattern-exhibit {
-  font-size: 0.8rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
   line-height: 1.6;
   display: flex;
   gap: 0.75rem;
@@ -684,22 +812,23 @@ p {
   color: var(--text-dim);
   flex-shrink: 0;
   width: 4.5rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .pattern-exhibit a {
   color: var(--text);
-  border: none;
 }
 
 .pattern-exhibit a:hover {
-  color: var(--hover);
+  color: var(--accent-hover);
 }
 
 .pattern-note {
-  font-size: 0.8rem;
-  color: #444;
-  line-height: 1.6;
+  font-size: 0.83rem;
+  color: var(--text-dim);
+  line-height: 1.7;
   margin-bottom: 0;
+  font-style: italic;
 }
 
 .patterns-coda {
@@ -707,28 +836,127 @@ p {
 }
 
 .patterns-coda p {
-  font-size: 0.85rem;
+  font-size: 0.89rem;
   color: var(--text-dim);
   margin-bottom: 0.5rem;
 }
 
-/* --- Mobile --- */
+/* ================================================================
+   404
+   ================================================================ */
 
-@media (max-width: 520px) {
-  body {
-    padding: 2rem 1.25rem 2rem;
+.not-found {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.not-found h1 {
+  margin-bottom: 1rem;
+}
+
+.not-found p {
+  color: var(--text-dim);
+  font-size: 0.89rem;
+}
+
+/* ================================================================
+   DESKTOP — Margin gutter + paragraph numbers
+   ================================================================ */
+
+@media (min-width: 1024px) {
+  .exhibit-sidebar {
+    display: block;
+  }
+
+  .mobile-context {
+    display: none;
+  }
+
+  .case-header {
+    max-width: none;
+    margin-left: 0;
+    grid-column: 2;
+  }
+
+  .exhibit-content p::before {
+    content: counter(para);
+    position: absolute;
+    left: -3.5rem;
+    width: 2.5rem;
+    text-align: right;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 0.67rem;
+    font-weight: 300;
+    color: var(--text-ghost);
+    font-variant-numeric: tabular-nums;
+    top: 0.3rem;
+  }
+}
+
+/* ================================================================
+   TABLET (< 1024px)
+   ================================================================ */
+
+@media (max-width: 1023px) {
+  .exhibit-layout {
+    grid-template-columns: 1fr;
+    max-width: 38rem;
+    padding: 2rem 1.5rem;
+    margin: 0 auto;
+  }
+
+  .case-header {
+    grid-column: 1;
+  }
+}
+
+/* ================================================================
+   MOBILE (< 640px)
+   ================================================================ */
+
+@media (max-width: 639px) {
+  html {
+    font-size: 17px;
+  }
+
+  .exhibit-layout {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .index-page {
+    padding: 2rem 1.25rem;
   }
 
   .col-re {
     display: none;
   }
 
-  .index-table {
-    font-size: 0.8rem;
+  .index-item {
+    grid-template-columns: 3rem 1fr;
   }
 
-  .exhibit-page {
-    font-size: 15px;
+  .index-list-header {
+    grid-template-columns: 3rem 1fr;
+  }
+
+  .case-header-top {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .case-header-meta {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .exhibit-filed span {
+    display: block;
+    margin-right: 0;
+  }
+
+  .submit-page {
+    padding: 2rem 1.25rem;
   }
 
   .submit-footer {
@@ -736,12 +964,10 @@ p {
     align-items: stretch;
   }
 
-  .log-entry {
-    flex-direction: column;
-    gap: 0.15rem;
-  }
-
-  .log-date {
-    width: auto;
+  .doc-page,
+  .about-page,
+  .patterns-page,
+  .not-found {
+    padding: 2rem 1.25rem;
   }
 }

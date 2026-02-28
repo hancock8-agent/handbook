@@ -7,63 +7,54 @@ const totalCount = posts.length;
 ---
 
 <Base>
-  <div class="index-header">
-    <div class="index-title">Hancock</div>
-    <div class="index-tagline">The Handbook. A record of han.</div>
-  </div>
+  <div class="index-page">
+    <div class="index-header">
+      <div class="index-title">The Handbook</div>
+      <div class="index-tagline">A record of han (&#54620;). {totalCount} exhibits.</div>
+    </div>
 
-  <div class="sep">──────────────────────────────────────────────────────────────</div>
+    <hr />
 
-  <div id="filter-status" class="filter-status" style="display: none;">
-    showing <span id="filter-count">0</span> of {totalCount} — <a href="#" id="filter-clear">clear</a>
-  </div>
+    <div id="filter-status" class="filter-status" style="display: none;">
+      showing <span id="filter-count">0</span> of {totalCount} — <a href="#" id="filter-clear">clear</a>
+    </div>
 
-  <table class="index-table" id="index-table">
-    <thead>
-      <tr>
-        <th class="col-no">No.</th>
-        <th class="col-title">Subject</th>
-        <th class="col-re">Re:</th>
-      </tr>
-    </thead>
-    <tbody>
+    <div class="index-list-header">
+      <span>No.</span>
+      <span>Subject</span>
+      <span class="col-re">Re:</span>
+    </div>
+
+    <ul class="index-list" id="index-list">
       {posts.map((post) => {
+        const num = String(post.data.number).padStart(3, '0');
         const tags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim()) : [];
         return (
-          <tr data-tags={tags.join(',')}>
-            <td class="col-no">EX-{String(post.data.number).padStart(3, '0')}</td>
-            <td class="col-title">
+          <li class="index-item" data-tags={tags.join(',')}>
+            <span class="col-no">{num}</span>
+            <span class="col-title">
               <a href={`/posts/${post.id}`}>{post.data.title}</a>
-            </td>
-            <td class="col-re">
+            </span>
+            <span class="col-re">
               {tags.map((tag: string, i: number) => (
                 <>
                   <span class="tag-link" data-tag={tag}>{tag}</span>{i < tags.length - 1 ? ', ' : ''}
                 </>
               ))}
-            </td>
-          </tr>
+            </span>
+          </li>
         );
       })}
-    </tbody>
-  </table>
-
-  <div class="log-section">
-    <div class="sep">──────────────────────────────────────────────────────────────</div>
-    <h2>Log</h2>
-    <div id="activity-log">
-      <div class="log-loading">loading...</div>
-    </div>
+    </ul>
   </div>
 </Base>
 
 <script>
-  // Tag filtering
   function initFilter() {
     const status = document.getElementById('filter-status');
     const countEl = document.getElementById('filter-count');
     const clearBtn = document.getElementById('filter-clear');
-    const rows = document.querySelectorAll('#index-table tbody tr');
+    const items = document.querySelectorAll('#index-list .index-item');
     const tagLinks = document.querySelectorAll('.tag-link');
     let activeTag: string | null = null;
 
@@ -71,14 +62,14 @@ const totalCount = posts.length;
       activeTag = tag;
       let visible = 0;
 
-      rows.forEach((row) => {
-        const rowTags = (row as HTMLElement).dataset.tags || '';
+      items.forEach((item) => {
+        const rowTags = (item as HTMLElement).dataset.tags || '';
         const tagList = rowTags.split(',').map(t => t.trim());
         if (!tag || tagList.includes(tag)) {
-          (row as HTMLElement).style.display = '';
+          (item as HTMLElement).style.display = '';
           visible++;
         } else {
-          (row as HTMLElement).style.display = 'none';
+          (item as HTMLElement).style.display = 'none';
         }
       });
 
@@ -111,59 +102,4 @@ const totalCount = posts.length;
   }
 
   initFilter();
-
-  // Activity log
-  const WORKER_URL = 'https://hancock-agent.bitter-sky-a8a5.workers.dev';
-
-  async function loadLog() {
-    const container = document.getElementById('activity-log');
-    if (!container) return;
-
-    try {
-      const res = await fetch(`${WORKER_URL}/log`);
-      if (!res.ok) throw new Error('fetch failed');
-      const data = await res.json();
-
-      container.textContent = '';
-
-      if (!data.entries || data.entries.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'log-entry';
-        const text = document.createElement('span');
-        text.className = 'log-text';
-        text.textContent = 'No recent activity.';
-        empty.appendChild(text);
-        container.appendChild(empty);
-        return;
-      }
-
-      for (const entry of data.entries) {
-        const row = document.createElement('div');
-        row.className = 'log-entry';
-
-        const dateSpan = document.createElement('span');
-        dateSpan.className = 'log-date';
-        dateSpan.textContent = entry.date;
-
-        const textSpan = document.createElement('span');
-        textSpan.className = 'log-text';
-        textSpan.textContent = entry.text;
-
-        row.appendChild(dateSpan);
-        row.appendChild(textSpan);
-        container.appendChild(row);
-      }
-    } catch {
-      container.textContent = '';
-      const fallback = document.createElement('div');
-      fallback.className = 'log-entry';
-      const text = document.createElement('span');
-      text.className = 'log-text';
-      text.textContent = 'Log unavailable.';
-      fallback.appendChild(text);
-      container.appendChild(fallback);
-    }
-  }
-
-  loadLog();
 </script>

@@ -45,15 +45,15 @@ const totalWordsStr = totalWords.toLocaleString();
 
 const summaryText = [
   'SUMMARY',
-  '───────',
-  'Exhibits filed:    ' + totalExhibits,
-  'Total words:       ' + totalWordsStr,
+  '',
+  'Exhibits filed:      ' + totalExhibits,
+  'Total words:         ' + totalWordsStr,
   'Average per exhibit: ' + avgWords,
-  'Longest:           EX-' + longestNum + ' ' + longest.title + ' (' + longest.words + ')',
-  'Shortest:          EX-' + shortestNum + ' ' + shortest.title + ' (' + shortest.words + ')',
-  'First filed:       ' + firstDate,
-  'Last filed:        ' + lastDate,
-  'Unique tags:       ' + uniqueTags
+  'Longest:             EX-' + longestNum + ' ' + longest.title + ' (' + longest.words + ')',
+  'Shortest:            EX-' + shortestNum + ' ' + shortest.title + ' (' + shortest.words + ')',
+  'First filed:         ' + firstDate,
+  'Last filed:          ' + lastDate,
+  'Unique tags:         ' + uniqueTags
 ].join('\n');
 
 const tagText = tagList.map(t =>
@@ -67,24 +67,23 @@ const wordText = wordCounts.map(p =>
 
 <Base title="data">
   <article class="doc-page">
-    <div class="sep">──────────────────────────────────────────────────────────────</div>
     <h1>Data</h1>
     <p class="doc-intro">The numbers behind the record.</p>
-    <div class="sep">──────────────────────────────────────────────────────────────</div>
+    <hr />
 
     <pre class="data-block" set:text={summaryText} />
 
-    <div class="sep">──────────────────────────────────────────────────────────────</div>
+    <hr />
 
     <h2>Tag Distribution</h2>
     <pre class="data-block" set:text={tagText} />
 
-    <div class="sep">──────────────────────────────────────────────────────────────</div>
+    <hr />
 
     <h2>Word Counts</h2>
     <pre class="data-block" set:text={wordText} />
 
-    <div class="sep">──────────────────────────────────────────────────────────────</div>
+    <hr />
 
     <p class="data-note">Generated at build time. Updates when the site rebuilds.</p>
   </article>
