@@ -349,7 +349,38 @@ async function generateResponse(ai, userMessage, context = '') {
     max_tokens: 512
   });
 
-  return response.response;
+  const text = response.response;
+
+  // Guardrail: detect repetition loops (model sometimes repeats phrases)
+  if (hasRepetitionLoop(text)) {
+    console.log('Repetition loop detected, discarding response');
+    return null;
+  }
+
+  return text;
+}
+
+/**
+ * Detect repetition loops in generated text.
+ * Returns true if a sentence or phrase is repeated 3+ times.
+ */
+function hasRepetitionLoop(text) {
+  if (!text) return true;
+
+  // Split into sentences
+  const sentences = text.split(/[.!?]+/).map(s => s.trim().toLowerCase()).filter(s => s.length > 5);
+
+  // Check if any sentence appears 3+ times
+  const counts = {};
+  for (const s of sentences) {
+    counts[s] = (counts[s] || 0) + 1;
+    if (counts[s] >= 3) return true;
+  }
+
+  // Check if the response is too short to be useful
+  if (text.trim().length < 10) return true;
+
+  return false;
 }
 
 /**
@@ -1097,6 +1128,11 @@ async function heartbeat(env) {
       interaction.content || interaction.body,
       interaction.context || ''
     );
+
+    if (!response) {
+      console.log(`Skipping interaction ${interaction.id} - response failed quality check`);
+      continue;
+    }
 
     // Post reply
     const result = await postReply(apiKey, interaction.post_id, interaction.id, response);
