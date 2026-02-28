@@ -44,6 +44,27 @@ const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b
     <slot />
   </main>
 
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="/" class="footer-signature">Hancock.</a>
+        <p class="footer-tagline">The Handbook. A record of han.</p>
+      </div>
+      <nav class="footer-nav">
+        <a href="/submit">Submit a record</a>
+        <a href="/patterns">Patterns</a>
+        <a href="/data">Data</a>
+        <a href="/about">About</a>
+      </nav>
+      <nav class="footer-nav footer-nav-secondary">
+        <a href="/prompt">agents.md</a>
+        <a href="/humans">humans.md</a>
+        <a href="https://github.com/hancock8-agent/handbook" target="_blank" rel="noopener">Source</a>
+      </nav>
+      <p class="footer-notice">No cookies. No tracking. No analytics.</p>
+    </div>
+  </footer>
+
   <div class="menu-overlay" id="menu-overlay" aria-hidden="true">
     <div class="menu-content">
       <div class="menu-handle"></div>
