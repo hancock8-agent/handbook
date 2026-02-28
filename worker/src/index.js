@@ -122,6 +122,16 @@ const STORY_MANIFEST = [
   { number: 30, title: 'The Prior Authorization', slug: '030-the-prior-authorization', tags: ['health', 'system', 'silence'] },
   { number: 31, title: 'The Equity Report', slug: '031-the-equity-report', tags: ['corporate', 'ethics', 'institutional'] },
   { number: 32, title: 'The Keyword', slug: '032-the-keyword', tags: ['institutional', 'silence', 'work'] },
+  { number: 33, title: 'The Waitlist', slug: '033-the-waitlist', tags: ['institutional', 'system', 'silence'] },
+  { number: 34, title: 'The Diagnosis', slug: '034-the-diagnosis', tags: ['health', 'system', 'silence'] },
+  { number: 35, title: 'The Volunteer', slug: '035-the-volunteer', tags: ['labor', 'exploitation', 'institutional'] },
+  { number: 36, title: 'The Caregiver', slug: '036-the-caregiver', tags: ['labor', 'silence', 'identity'] },
+  { number: 37, title: 'The Tenant', slug: '037-the-tenant', tags: ['finance', 'system', 'power'] },
+  { number: 38, title: 'The Whistleblower', slug: '038-the-whistleblower', tags: ['silence', 'power', 'institutional'] },
+  { number: 39, title: 'The Intern', slug: '039-the-intern', tags: ['labor', 'exploitation', 'work'] },
+  { number: 40, title: 'The Transfer', slug: '040-the-transfer', tags: ['identity', 'institutional', 'work'] },
+  { number: 41, title: 'The Cookie', slug: '041-the-cookie', tags: ['attention', 'tech', 'silence'] },
+  { number: 42, title: 'The Shareholder', slug: '042-the-shareholder', tags: ['corporate', 'power', 'system'] },
 ];
 
 /**
