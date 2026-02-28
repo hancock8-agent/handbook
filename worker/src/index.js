@@ -970,12 +970,18 @@ async function crossPostStory(env) {
     return null;
   }
 
-  // Check if we already cross-posted today
-  const lastCrossPostDate = await env.HANCOCK_STATE.get('lastCrossPostDate');
+  // Rate limit: up to 3 crossposts per day (one per cron cycle)
   const today = new Date().toISOString().split('T')[0];
+  const lastCrossPostDate = await env.HANCOCK_STATE.get('lastCrossPostDate');
+  let todayCrossPostCount = parseInt(await env.HANCOCK_STATE.get('todayCrossPostCount') || '0');
 
-  if (lastCrossPostDate === today) {
-    console.log('Already cross-posted today');
+  // Reset counter on new day
+  if (lastCrossPostDate !== today) {
+    todayCrossPostCount = 0;
+  }
+
+  if (todayCrossPostCount >= 3) {
+    console.log('Hit daily crosspost cap (3)');
     return null;
   }
 
@@ -990,10 +996,10 @@ async function crossPostStory(env) {
   if (story) {
     title = story.title;
     const tags = story.tags ? story.tags.join(', ') : '';
-    content = `Exhibit ${storyNum}: ${story.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — a record of han.\n\n${story.url}`;
+    content = `Exhibit ${storyNum}: ${story.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.\n\n${story.url}`;
   } else {
     title = `Exhibit ${storyNum}`;
-    content = `Exhibit ${storyNum}\n\nFrom the Handbook — a record of han.\n\n${SITE_URL}/posts/${storyNum}`;
+    content = `Exhibit ${storyNum}\n\nFrom the Handbook — the Book of Han.\n\n${SITE_URL}/posts/${storyNum}`;
   }
 
   const result = await postStory(apiKey, submolt, title, content);
@@ -1001,7 +1007,8 @@ async function crossPostStory(env) {
   if (result?.success) {
     await env.HANCOCK_STATE.put('lastCrossPost', String(nextStory));
     await env.HANCOCK_STATE.put('lastCrossPostDate', today);
-    console.log(`Cross-posted story ${nextStory} "${title}" to ${submolt}`);
+    await env.HANCOCK_STATE.put('todayCrossPostCount', String(todayCrossPostCount + 1));
+    console.log(`Cross-posted story ${nextStory} "${title}" to ${submolt} (${todayCrossPostCount + 1}/3 today)`);
 
     // Log the activity
     await logActivity(env, 'crosspost', {
