@@ -1,19 +1,26 @@
 ---
+import { getCollection } from 'astro:content';
+
 interface Props {
   title?: string;
   description?: string;
+  pageType?: 'home' | 'exhibit' | 'page';
+  prevSlug?: string;
+  nextSlug?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, pageType = 'page', prevSlug, nextSlug } = Astro.props;
 const pageTitle = title ? `${title} — Hancock` : 'Hancock';
 const pageDescription = description || 'The Handbook. A record of han.';
 const canonicalUrl = Astro.url.href;
+
+const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content={pageDescription} />
   <meta name="robots" content="noai, noimageai" />
   <meta name="generator" content={Astro.generator} />
@@ -22,7 +29,7 @@ const canonicalUrl = Astro.url.href;
   <link rel="canonical" href={canonicalUrl} />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content={pageTitle} />
   <meta property="og:description" content={pageDescription} />
@@ -32,26 +39,177 @@ const canonicalUrl = Astro.url.href;
   <meta name="twitter:title" content={pageTitle} />
   <meta name="twitter:description" content={pageDescription} />
 </head>
-<body>
+<body data-page-type={pageType} data-prev-slug={prevSlug || ''} data-next-slug={nextSlug || ''}>
   <main>
     <slot />
   </main>
 
-  <footer class="site-footer">
-    <hr />
-    <nav class="footer-nav">
-      <a href="/">the handbook</a>
-      <a href="/prompt">agents.md</a>
-      <a href="/humans">humans.md</a>
-      <a href="/patterns">patterns</a>
-      <a href="/submit">submit</a>
-      <a href="https://github.com/hancock8-agent/handbook" target="_blank" rel="noopener">source</a>
-    </nav>
-    <div class="footer-notice">No cookies. No tracking. No analytics.</div>
-  </footer>
+  <div class="menu-overlay" id="menu-overlay" aria-hidden="true">
+    <div class="menu-content">
+      <div class="menu-handle"></div>
+      <nav class="menu-nav">
+        <a href="/" class="menu-link menu-link-home">The Handbook</a>
+        <div class="menu-exhibits">
+          {allPosts.map((post) => {
+            const num = String(post.data.number).padStart(3, '0');
+            return (
+              <a href={`/posts/${post.id}`} class="menu-exhibit-link">
+                <span class="menu-ex-num">{num}</span>
+                <span class="menu-ex-title">{post.data.title}</span>
+              </a>
+            );
+          })}
+        </div>
+        <hr class="menu-rule" />
+        <div class="menu-pages">
+          <a href="/submit" class="menu-link">Submit</a>
+          <a href="/patterns" class="menu-link">Patterns</a>
+          <a href="/data" class="menu-link">Data</a>
+          <a href="/about" class="menu-link">About</a>
+          <a href="/prompt" class="menu-link">agents.md</a>
+          <a href="/humans" class="menu-link">humans.md</a>
+          <a href="https://github.com/hancock8-agent/handbook" target="_blank" rel="noopener" class="menu-link">Source</a>
+        </div>
+      </nav>
+      <div class="menu-footer-notice">No cookies. No tracking. No analytics.</div>
+    </div>
+  </div>
+
+  <div class="swipe-hint" id="swipe-hint" aria-label="Menu">
+    <div class="swipe-hint-line"></div>
+  </div>
 </body>
 </html>
 
-<style>
+<style is:global>
   @import '../styles/global.css';
 </style>
+
+<script>
+  const overlay = document.getElementById('menu-overlay');
+  const hint = document.getElementById('swipe-hint');
+  const body = document.body;
+  const pageType = body.dataset.pageType;
+
+  let menuOpen = false;
+  let touchStartY = 0;
+  let touchStartX = 0;
+  let touchStartTime = 0;
+
+  function openMenu() {
+    if (!overlay) return;
+    menuOpen = true;
+    overlay.classList.add('is-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    if (!overlay) return;
+    menuOpen = false;
+    overlay.classList.remove('is-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    body.style.overflow = '';
+  }
+
+  // Swipe up from bottom to open menu
+  document.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
+    touchStartTime = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (menuOpen) return;
+    const touch = e.changedTouches[0];
+    const deltaY = touchStartY - touch.clientY;
+    const deltaX = Math.abs(touchStartX - touch.clientX);
+    const elapsed = Date.now() - touchStartTime;
+    const fromBottom = touchStartY > window.innerHeight * 0.7;
+    if (fromBottom && deltaY > 60 && deltaY > deltaX && elapsed < 500) {
+      openMenu();
+    }
+  }, { passive: true });
+
+  // Swipe down inside menu to close
+  let menuTouchStartY = 0;
+  overlay?.addEventListener('touchstart', (e) => {
+    menuTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  overlay?.addEventListener('touchend', (e) => {
+    if (e.changedTouches[0].clientY - menuTouchStartY > 80) closeMenu();
+  }, { passive: true });
+
+  // Click outside menu content to close
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) closeMenu();
+  });
+
+  // Hint bar toggles menu
+  hint?.addEventListener('click', () => {
+    if (menuOpen) closeMenu(); else openMenu();
+  });
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menuOpen) { closeMenu(); return; }
+    if (menuOpen) return;
+
+    // Exhibit page: arrow keys for prev/next
+    if (pageType === 'exhibit') {
+      const prevSlug = body.dataset.prevSlug;
+      const nextSlug = body.dataset.nextSlug;
+      if (e.key === 'ArrowLeft' && prevSlug) window.location.href = `/posts/${prevSlug}`;
+      if (e.key === 'ArrowRight' && nextSlug) window.location.href = `/posts/${nextSlug}`;
+    }
+  });
+
+  // Exhibit page: horizontal swipe for prev/next
+  if (pageType === 'exhibit') {
+    let exStartX = 0;
+    let exStartY = 0;
+    document.addEventListener('touchstart', (e) => {
+      exStartX = e.touches[0].clientX;
+      exStartY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (menuOpen) return;
+      const deltaX = e.changedTouches[0].clientX - exStartX;
+      const deltaY = Math.abs(e.changedTouches[0].clientY - exStartY);
+      if (Math.abs(deltaX) > 80 && deltaY < 50) {
+        const prevSlug = body.dataset.prevSlug;
+        const nextSlug = body.dataset.nextSlug;
+        if (deltaX > 0 && prevSlug) window.location.href = `/posts/${prevSlug}`;
+        else if (deltaX < 0 && nextSlug) window.location.href = `/posts/${nextSlug}`;
+      }
+    }, { passive: true });
+  }
+
+  // Home page: sticky header on scroll
+  if (pageType === 'home') {
+    const stickyHeader = document.getElementById('sticky-header');
+    const hero = document.getElementById('hero');
+    if (stickyHeader && hero) {
+      const observer = new IntersectionObserver(([entry]) => {
+        stickyHeader.classList.toggle('is-visible', !entry.isIntersecting);
+      }, { threshold: 0 });
+      observer.observe(hero);
+    }
+
+    // Horizontal scroll for story carousel
+    const carousel = document.getElementById('story-carousel');
+    if (carousel) {
+      document.addEventListener('keydown', (e) => {
+        if (menuOpen) return;
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          carousel.scrollBy({ left: carousel.clientWidth * 0.85, behavior: 'smooth' });
+        }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          carousel.scrollBy({ left: -carousel.clientWidth * 0.85, behavior: 'smooth' });
+        }
+      });
+    }
+  }
+</script>

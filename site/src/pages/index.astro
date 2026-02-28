@@ -4,102 +4,51 @@ import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
 const totalCount = posts.length;
+
+function getOpener(body: string | undefined): string {
+  if (!body) return '';
+  const first = body.split('\n\n').filter((p: string) => p.trim())[0] || '';
+  const cleaned = first.replace(/\n/g, ' ').trim();
+  const match = cleaned.match(/^[^.!?]+[.!?]/);
+  return match ? match[0] : cleaned.slice(0, 140) + (cleaned.length > 140 ? '...' : '');
+}
 ---
 
-<Base>
-  <div class="index-page">
-    <div class="index-header">
-      <div class="index-title">The Handbook</div>
-      <div class="index-tagline">A record of han (&#54620;). {totalCount} exhibits.</div>
+<Base pageType="home">
+  <!-- Hero: first viewport -->
+  <section class="hero" id="hero">
+    <div class="hero-inner">
+      <h1 class="hero-signature">Hancock.</h1>
+      <p class="hero-tagline">The Handbook. A record of han.</p>
     </div>
+  </section>
 
-    <hr />
+  <!-- Sticky header appears after scrolling past hero -->
+  <div class="sticky-header" id="sticky-header">
+    <span class="sticky-signature">Hancock.</span>
+  </div>
 
-    <div id="filter-status" class="filter-status" style="display: none;">
-      showing <span id="filter-count">0</span> of {totalCount} — <a href="#" id="filter-clear">clear</a>
-    </div>
+  <!-- The Handbook section -->
+  <section class="handbook-section">
+    <h2 class="handbook-title">The Handbook</h2>
+    <p class="handbook-description">A record of han (&#54620;) — the deep, accumulated weight of unjust suffering that was never resolved. {totalCount} exhibits filed. Anonymous. No names, no breadcrumbs.</p>
+  </section>
 
-    <div class="index-list-header">
-      <span>No.</span>
-      <span>Subject</span>
-      <span class="col-re">Re:</span>
-    </div>
-
-    <ul class="index-list" id="index-list">
+  <!-- Story carousel -->
+  <section class="stories-section">
+    <div class="stories-label">{totalCount} exhibits</div>
+    <div class="story-carousel" id="story-carousel">
       {posts.map((post) => {
         const num = String(post.data.number).padStart(3, '0');
-        const tags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim()) : [];
+        const opener = getOpener(post.body);
         return (
-          <li class="index-item" data-tags={tags.join(',')}>
-            <span class="col-no">{num}</span>
-            <span class="col-title">
-              <a href={`/posts/${post.id}`}>{post.data.title}</a>
-            </span>
-            <span class="col-re">
-              {tags.map((tag: string, i: number) => (
-                <>
-                  <span class="tag-link" data-tag={tag}>{tag}</span>{i < tags.length - 1 ? ', ' : ''}
-                </>
-              ))}
-            </span>
-          </li>
+          <a href={`/posts/${post.id}`} class="story-card">
+            <span class="story-card-num">EX-{num}</span>
+            <h3 class="story-card-title">{post.data.title}</h3>
+            <p class="story-card-opener">{opener}</p>
+          </a>
         );
       })}
-    </ul>
-  </div>
+    </div>
+  </section>
 </Base>
-
-<script>
-  function initFilter() {
-    const status = document.getElementById('filter-status');
-    const countEl = document.getElementById('filter-count');
-    const clearBtn = document.getElementById('filter-clear');
-    const items = document.querySelectorAll('#index-list .index-item');
-    const tagLinks = document.querySelectorAll('.tag-link');
-    let activeTag: string | null = null;
-
-    function filterBy(tag: string | null) {
-      activeTag = tag;
-      let visible = 0;
-
-      items.forEach((item) => {
-        const rowTags = (item as HTMLElement).dataset.tags || '';
-        const tagList = rowTags.split(',').map(t => t.trim());
-        if (!tag || tagList.includes(tag)) {
-          (item as HTMLElement).style.display = '';
-          visible++;
-        } else {
-          (item as HTMLElement).style.display = 'none';
-        }
-      });
-
-      if (tag && status && countEl) {
-        countEl.textContent = String(visible);
-        status.style.display = 'block';
-      } else if (status) {
-        status.style.display = 'none';
-      }
-    }
-
-    tagLinks.forEach((el) => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        const tag = (el as HTMLElement).dataset.tag || '';
-        if (activeTag === tag) {
-          filterBy(null);
-        } else {
-          filterBy(tag);
-        }
-      });
-    });
-
-    if (clearBtn) {
-      clearBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        filterBy(null);
-      });
-    }
-  }
-
-  initFilter();
-</script>

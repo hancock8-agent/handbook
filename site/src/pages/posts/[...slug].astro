@@ -43,7 +43,7 @@ const related = currentTags.length > 0
 const firstExhibit = allPosts[0];
 ---
 
-<Base title={post.data.title} description={ogDescription}>
+<Base title={post.data.title} description={ogDescription} pageType="exhibit" prevSlug={prev?.id} nextSlug={next?.id}>
   <article class="exhibit-layout">
 
     <header class="case-header">
@@ -77,10 +77,6 @@ const firstExhibit = allPosts[0];
     </aside>
 
     <div class="exhibit-main">
-      <div class="mobile-context">
-        The Handbook — a record of han. {totalExhibits} exhibits. <a href="/">Browse all</a> · <a href="/submit">Submit yours</a>
-      </div>
-
       <div class="exhibit-content">
         <Content />
       </div>
@@ -111,10 +107,6 @@ const firstExhibit = allPosts[0];
         )}
       </nav>
 
-      <div class="exhibit-footer-context">
-        The Handbook. {totalExhibits} exhibits. Anonymous. No cookies. No tracking.<br />
-        <a href={`/posts/${firstExhibit.id}`}>Read from the start</a> · <a href="/">Browse all</a> · <a href="/submit">Submit a record</a>
-      </div>
     </div>
 
   </article>
