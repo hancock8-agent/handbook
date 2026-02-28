@@ -478,14 +478,20 @@ hr.light {
 }
 
 .case-header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--text-dim);
   font-weight: 600;
+}
+
+.case-header-home {
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.case-header-home:hover {
+  color: var(--text-bright);
 }
 
 .case-header hr {
