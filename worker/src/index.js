@@ -985,6 +985,167 @@ function getStoryMetadata(storyNumber) {
   };
 }
 
+// ================================================================
+// X (Twitter) Integration — OAuth 1.0a + posting
+// ================================================================
+
+const X_API_BASE = 'https://api.x.com/2';
+
+/**
+ * RFC 3986 percent encoding (required for OAuth 1.0a)
+ */
+function encodeRFC3986(str) {
+  return encodeURIComponent(String(str)).replace(/[!'()*]/g, c =>
+    '%' + c.charCodeAt(0).toString(16).toUpperCase()
+  );
+}
+
+/**
+ * Generate OAuth 1.0a HMAC-SHA1 signature
+ */
+async function generateOAuthSignature(method, url, params, consumerSecret, tokenSecret) {
+  const sortedParams = Object.keys(params).sort()
+    .map(k => `${encodeRFC3986(k)}=${encodeRFC3986(params[k])}`)
+    .join('&');
+
+  const baseString = `${method.toUpperCase()}&${encodeRFC3986(url)}&${encodeRFC3986(sortedParams)}`;
+  const signingKey = `${encodeRFC3986(consumerSecret)}&${encodeRFC3986(tokenSecret)}`;
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(signingKey),
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  );
+
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(baseString));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+
+/**
+ * Build OAuth 1.0a Authorization header for X API
+ */
+async function buildOAuthHeader(method, url, env) {
+  const oauthParams = {
+    oauth_consumer_key: env.X_API_KEY,
+    oauth_nonce: crypto.randomUUID().replace(/-/g, ''),
+    oauth_signature_method: 'HMAC-SHA1',
+    oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+    oauth_token: env.X_ACCESS_TOKEN,
+    oauth_version: '1.0'
+  };
+
+  oauthParams.oauth_signature = await generateOAuthSignature(
+    method, url, oauthParams,
+    env.X_API_KEY_SECRET, env.X_ACCESS_TOKEN_SECRET
+  );
+
+  const parts = Object.keys(oauthParams).sort()
+    .map(k => `${encodeRFC3986(k)}="${encodeRFC3986(oauthParams[k])}"`);
+
+  return `OAuth ${parts.join(', ')}`;
+}
+
+/**
+ * Post a tweet to X
+ */
+async function postToX(env, text) {
+  if (!env.X_API_KEY || !env.X_ACCESS_TOKEN) {
+    console.log('X credentials not configured, skipping');
+    return { success: false, reason: 'no_credentials' };
+  }
+
+  const url = `${X_API_BASE}/tweets`;
+
+  try {
+    const authHeader = await buildOAuthHeader('POST', url, env);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ text })
+    });
+
+    if (response.status === 429) {
+      console.log('X rate limited');
+      return { success: false, reason: 'rate_limited' };
+    }
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.log(`X post failed (${response.status}): ${error}`);
+      return { success: false, reason: 'api_error', status: response.status, error };
+    }
+
+    const result = await response.json();
+    const tweetId = result.data?.id;
+    console.log(`Posted to X: ${tweetId}`);
+
+    return {
+      success: true,
+      tweetId,
+      url: tweetId ? `https://x.com/Hancock137839/status/${tweetId}` : null
+    };
+  } catch (e) {
+    console.log(`X post error: ${e.message}`);
+    return { success: false, reason: 'exception', error: e.message };
+  }
+}
+
+/**
+ * Cross-post a story to X (separate state from Moltbook)
+ */
+async function crossPostToX(env) {
+  if (!env.X_API_KEY) return null;
+
+  let lastXCrossPost = await env.HANCOCK_STATE.get('lastXCrossPost');
+  const nextStory = lastXCrossPost ? parseInt(lastXCrossPost) + 1 : 1;
+
+  if (nextStory > STORY_MANIFEST.length) {
+    console.log('All stories cross-posted to X');
+    return null;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const lastXDate = await env.HANCOCK_STATE.get('lastXCrossPostDate');
+  let todayXCount = parseInt(await env.HANCOCK_STATE.get('todayXCrossPostCount') || '0');
+
+  if (lastXDate !== today) todayXCount = 0;
+  if (todayXCount >= 3) {
+    console.log('Hit daily X crosspost cap (3)');
+    return null;
+  }
+
+  const manifest = STORY_MANIFEST.find(s => s.number === nextStory);
+  if (!manifest) return null;
+
+  const storyNum = String(nextStory).padStart(3, '0');
+  const tags = manifest.tags ? manifest.tags.join(', ') : '';
+  const text = `Exhibit ${storyNum}: ${manifest.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.\n\n${SITE_URL}/posts/${manifest.slug}`;
+
+  const result = await postToX(env, text);
+
+  if (result.success) {
+    await env.HANCOCK_STATE.put('lastXCrossPost', String(nextStory));
+    await env.HANCOCK_STATE.put('lastXCrossPostDate', today);
+    await env.HANCOCK_STATE.put('todayXCrossPostCount', String(todayXCount + 1));
+    console.log(`X cross-posted story ${nextStory} "${manifest.title}" (${todayXCount + 1}/3 today)`);
+
+    await logActivity(env, 'x-crosspost', {
+      storyNumber: nextStory,
+      title: manifest.title,
+      tweetId: result.tweetId,
+      url: result.url
+    });
+  }
+
+  return result;
+}
+
 /**
  * Cross-post a story from the site to Moltbook
  */
@@ -1152,8 +1313,11 @@ async function heartbeat(env) {
   // Monitor submolts for real stories
   const submoltEngagements = await monitorSubmolts(env);
 
-  // Cross-post one story per day
+  // Cross-post one story per cycle (Moltbook)
   const crossPost = await crossPostStory(env);
+
+  // Cross-post one story per cycle (X)
+  const xCrossPost = await crossPostToX(env);
 
   return {
     status: 'complete',
@@ -1161,6 +1325,7 @@ async function heartbeat(env) {
     responded,
     submoltEngagements,
     crossPosted: crossPost ? true : false,
+    xCrossPosted: xCrossPost?.success || false,
     pendingPosted
   };
 }
@@ -1325,7 +1490,7 @@ async function handleRequest(request, env) {
 
       // Translate raw activities into human-readable log entries
       const entries = activities
-        .filter(a => a.type === 'crosspost' || a.type === 'comment')
+        .filter(a => a.type === 'crosspost' || a.type === 'comment' || a.type === 'x-crosspost')
         .slice(0, 7)
         .map(a => {
           const date = new Date(a.timestamp);
@@ -1335,6 +1500,13 @@ async function handleRequest(request, env) {
             return {
               date: dateStr,
               text: `Crossposted "${a.details?.title || 'untitled'}" to m/${a.details?.submolt || 'unknown'}.`
+            };
+          }
+
+          if (a.type === 'x-crosspost') {
+            return {
+              date: dateStr,
+              text: `Posted "${a.details?.title || 'untitled'}" to X.`
             };
           }
 
@@ -1380,6 +1552,8 @@ async function handleRequest(request, env) {
       lastCheck: await env.HANCOCK_STATE.get('lastCheck'),
       lastCrossPostDate: await env.HANCOCK_STATE.get('lastCrossPostDate'),
       lastCrossPost: await env.HANCOCK_STATE.get('lastCrossPost'),
+      lastXCrossPostDate: await env.HANCOCK_STATE.get('lastXCrossPostDate'),
+      lastXCrossPost: await env.HANCOCK_STATE.get('lastXCrossPost'),
     };
     const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
     const now = new Date();
@@ -1398,14 +1572,19 @@ async function handleRequest(request, env) {
     const storyNum = state.lastCrossPost || '?';
     const crosspostStatus = state.lastCrossPostDate === today ? `story ${storyNum} posted today` : `last: story ${storyNum}`;
 
+    const xCrossposts = recent.filter(a => a.type === 'x-crosspost').length;
+    const xStoryNum = state.lastXCrossPost || 'not started';
+    const xStatus = state.lastXCrossPostDate === today ? `story ${xStoryNum} posted today` : `last: story ${xStoryNum}`;
+
     const lines = [];
     lines.push('## Hancock — Status');
     lines.push('');
-    lines.push(`**Last 24h:** ${comments} comments, ${crossposts} crossposts, ${postsObserved} posts observed`);
+    lines.push(`**Last 24h:** ${comments} comments, ${crossposts} crossposts, ${xCrossposts} X posts, ${postsObserved} posts observed`);
     if (submissions > 0) {
       lines.push(`**Submissions:** ${submissions} new`);
     }
-    lines.push(`**Crosspost:** ${crosspostStatus}`);
+    lines.push(`**Moltbook:** ${crosspostStatus}`);
+    lines.push(`**X:** ${xStatus}`);
     lines.push(`**Last heartbeat:** ${state.lastCheck || 'never'}`);
     lines.push('');
     lines.push('---');
@@ -1443,6 +1622,8 @@ async function handleRequest(request, env) {
       lastSubmoltCheck: await env.HANCOCK_STATE.get('lastSubmoltCheck'),
       lastCrossPost: await env.HANCOCK_STATE.get('lastCrossPost'),
       lastCrossPostDate: await env.HANCOCK_STATE.get('lastCrossPostDate'),
+      lastXCrossPost: await env.HANCOCK_STATE.get('lastXCrossPost'),
+      lastXCrossPostDate: await env.HANCOCK_STATE.get('lastXCrossPostDate'),
       pendingPost: pendingRaw ? JSON.parse(pendingRaw) : null
     };
     return new Response(JSON.stringify(state), {
@@ -1884,6 +2065,39 @@ async function handleRequest(request, env) {
     }
 
     return new Response(JSON.stringify(result), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Post to X manually
+  if (url.pathname === '/x-post' && request.method === 'POST') {
+    const body = await request.json();
+    if (!body.text) {
+      return new Response(JSON.stringify({ error: 'text required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    const result = await postToX(env, body.text);
+
+    if (result.success) {
+      await logActivity(env, 'x-crosspost', {
+        title: body.text.slice(0, 60),
+        tweetId: result.tweetId,
+        url: result.url,
+        source: 'manual'
+      });
+    }
+
+    return new Response(JSON.stringify(result), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Manual X crosspost trigger (next story in queue)
+  if (url.pathname === '/x-crosspost') {
+    const result = await crossPostToX(env);
+    return new Response(JSON.stringify({ result }), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
