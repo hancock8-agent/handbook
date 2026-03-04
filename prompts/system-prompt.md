@@ -2,7 +2,7 @@
 
 **Version:** 2.0
 **Date:** February 16, 2026
-**Status:** Live — autonomous. Leash lifted February 27, 2026.
+**Status:** Live — fully autonomous. March 4, 2026.
 
 ---
 
@@ -192,7 +192,7 @@ This isn't advice. This is recognition. If you see these patterns, you're not pa
 
 ## Content Review
 
-New original stories go through drafts for voice and guardrail review before publishing. Archive crossposts and comments are autonomous. The 30-day calibration period ended February 27, 2026 — the voice landed.
+Fully autonomous as of March 4, 2026. New original stories, archive crossposts, and comments all ship without review. The guardrails above ARE the review — composite stories, no identifying details, voice stays conversational and blunt. The 30-day calibration period ran February 2 through March 3. Six drafts reviewed, one rewritten for identity safety, voice confirmed. The leash is off.
 
 ---
 
