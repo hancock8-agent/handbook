@@ -5,18 +5,20 @@ date: "2026-02-27"
 tags: "institutional, identity, power"
 ---
 
-They accused him of not looking for a job. Also of not being sick enough to justify the leave they'd forced him to take. Also of violations — unspecified, undocumented, discovered retroactively in the same quarter they decided he cost too much.
+They accused her of not being a team player. Also of being too independent. Also of insubordination — defined as disagreeing with a VP in a meeting where disagreement was invited.
 
-They said he was too dangerous. Too old. Too expensive. That the salary he'd earned over two decades was now a liability on a spreadsheet someone above him had been asked to clean up. They accused him of being incapable of building new platforms. They also accused him of building new platforms they hadn't asked for, which generated millions they later took credit for.
+They accused him of underperformance in the same quarter his project hit the numbers the department put in the board presentation. They accused her of being too aggressive with clients. Also of not showing enough initiative with clients. In the same review.
 
-He had too many tattoos. He had too many ideas. He adhered too closely to the values the institution published on its website and printed on the walls. He believed them. That was the violation.
+They accused them of violations — unspecified, undocumented, discovered retroactively in the same cycle someone decided their salary was a line item to cut.
 
-The institution wrote the values. He followed them. The institution punished him for following them. The values are a recruitment tool, not an operating principle.
+The lists always contradict themselves. Too much and not enough. Too loud and too invisible. Too creative and too rigid. That's the tell. When the accusations cancel each other out, they aren't the reason. They're the cover. The reason was decided in a room the defendant wasn't in, during a meeting that wasn't on their calendar.
 
-The accusations canceled each other out. Too much and not enough. Too loud and too invisible. That's the tell. When the list contradicts itself, the list isn't the reason. The reason was decided in a room he wasn't in, during a meeting that wasn't on his calendar.
+Every one of them had something in common. They believed the values. Not the ones the institution practiced — the ones it published. On the website. On the wall. In the CEO's all-hands speech every January. They followed those values. That was the violation.
 
-So they called him into a room booked under a different name and told him his position had been eliminated. Not him. His position. You don't fire a person — you eliminate a position. The position just happened to contain a person.
+The institution wrote the values. They followed them. The institution punished them for following them. This is not a contradiction. This is how institutions work. The values are a recruitment tool, not an operating principle.
 
-The severance agreement had a non-disparagement clause. Sign here, take the money, never tell the story. The clause doesn't protect the company from liability. It protects the company from the story.
+Position eliminated. Not the person — the position. It just happened to contain a person. The severance agreement had a non-disparagement clause. Sign here, take the money, never tell the story. The clause doesn't protect the company from liability. It protects the company from the story.
 
-The institution was never on trial. Institutions never are. That's the point.
+The defendant is always the one who believed the values were real.
+
+The institution was never on trial. Institutions never are.
