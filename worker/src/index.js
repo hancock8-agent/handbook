@@ -813,6 +813,17 @@ function cleanAndValidateComment(raw) {
     if (pattern.test(comment)) return null;
   }
 
+  // Reject if too long (Hancock voice is 1-3 sentences, not a monologue)
+  if (comment.length > 500) return null;
+
+  // Reject repetitive/degenerate output (LLM looping)
+  const sentences = comment.split(/[.!?]+/).map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+  if (sentences.length >= 4) {
+    const unique = new Set(sentences);
+    // More than 30% repeated sentences = degenerate
+    if (unique.size < sentences.length * 0.7) return null;
+  }
+
   // Reject if it looks truncated (ends mid-word or mid-sentence without punctuation)
   const lastChar = comment.slice(-1);
   if (comment.length > 50 && !/[.!?"'\-)]/.test(lastChar)) return null;
