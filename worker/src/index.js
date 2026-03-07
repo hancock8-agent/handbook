@@ -81,6 +81,15 @@ const WATCHED_SUBMOLTS = [
 // Max activities to keep in log
 const MAX_ACTIVITY_LOG = 50;
 
+// RSS feeds for content discovery — institutional harm patterns
+const RSS_FEEDS = [
+  { url: 'https://www.reddit.com/r/antiwork/.rss', source: 'r/antiwork' },
+  { url: 'https://www.reddit.com/r/recruitinghell/.rss', source: 'r/recruitinghell' },
+  { url: 'https://www.reddit.com/r/WorkReform/.rss', source: 'r/WorkReform' },
+  { url: 'https://www.reddit.com/r/legaladvice/.rss', source: 'r/legaladvice' },
+  { url: 'https://news.google.com/rss/search?q=layoffs+OR+whistleblower+OR+%22workplace+retaliation%22&hl=en-US&gl=US&ceid=US:en', source: 'google-news' },
+];
+
 // Submolts Hancock posts stories to
 const STORY_SUBMOLTS = ['offmychest', 'general', 'headlines'];
 
@@ -832,6 +841,228 @@ function cleanAndValidateComment(raw) {
 }
 
 /**
+ * Parse RSS XML into items. Minimal regex parser — no deps needed.
+ */
+function parseRSSItems(xml) {
+  const items = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>|<entry>([\s\S]*?)<\/entry>/gi;
+  let match;
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const block = match[1] || match[2];
+    const title = (block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/) || [])[1]?.trim() || '';
+    const desc = (block.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/) ||
+                  block.match(/<content[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/) ||
+                  block.match(/<summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/) || [])[1]?.trim() || '';
+    const link = (block.match(/<link[^>]*href="([^"]+)"/) || block.match(/<link[^>]*>([\s\S]*?)<\/link>/) || [])[1]?.trim() || '';
+    const cleanDesc = desc.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+    if (title) {
+      items.push({ title, description: cleanDesc.slice(0, 500), link });
+    }
+  }
+  return items;
+}
+
+/**
+ * Score an RSS item for institutional harm / han patterns.
+ * Returns 0 (skip) or a positive score.
+ */
+function scoreForHan(item) {
+  const text = `${item.title} ${item.description}`.toLowerCase();
+
+  const hanIndicators = [
+    'laid off', 'layoff', 'layoffs', 'fired', 'terminated', 'let go',
+    'nda', 'non-disclosure', 'non-compete', 'severance',
+    'whistleblower', 'retaliation', 'wrongful termination',
+    'harassment', 'hostile work', 'toxic workplace',
+    'wage theft', 'unpaid', 'exploitation',
+    'blacklisted', 'do not rehire', 'pushed out',
+    'restructuring', 'position eliminated', 'downsizing',
+    'forced arbitration', 'class action', 'settlement',
+    'union busting', 'anti-union', 'right to work',
+    'disability', 'discrimination', 'age discrimination',
+    'prior authorization', 'insurance denied', 'claim denied',
+    'eviction', 'foreclosure', 'predatory lending',
+    'student debt', 'loan forgiveness denied',
+    'gig economy', 'independent contractor', 'misclassification',
+  ];
+
+  const skipIndicators = [
+    'ai consciousness', 'singularity', 'agi', 'superintelligence',
+    'crypto', 'nft', 'bitcoin', 'meme stock',
+    'celebrity', 'entertainment', 'sports score',
+  ];
+
+  let score = 0;
+  for (const indicator of hanIndicators) {
+    if (text.includes(indicator)) score++;
+  }
+  for (const skip of skipIndicators) {
+    if (text.includes(skip)) return 0;
+  }
+  return score;
+}
+
+/**
+ * Fetch all RSS feeds and return scored, filtered items.
+ */
+async function fetchRSSFeeds() {
+  const allItems = [];
+
+  for (const feed of RSS_FEEDS) {
+    try {
+      const response = await fetch(feed.url, {
+        headers: { 'User-Agent': 'Hancock/1.0 (RSS reader)' }
+      });
+      if (!response.ok) {
+        console.log(`RSS fetch failed for ${feed.source}: ${response.status}`);
+        continue;
+      }
+      const xml = await response.text();
+      const items = parseRSSItems(xml);
+      for (const item of items) {
+        item.source = feed.source;
+        item.score = scoreForHan(item);
+      }
+      allItems.push(...items.filter(i => i.score >= 2));
+    } catch (e) {
+      console.log(`RSS error for ${feed.source}: ${e.message}`);
+    }
+  }
+
+  allItems.sort((a, b) => b.score - a.score);
+  return allItems.slice(0, 10);
+}
+
+/**
+ * Get set of RSS URLs already used as story fodder (persisted in KV)
+ */
+async function getUsedFodderUrls(env) {
+  const raw = await env.HANCOCK_STATE.get('usedFodderUrls');
+  if (!raw) return new Set();
+  try { return new Set(JSON.parse(raw)); } catch { return new Set(); }
+}
+
+async function saveUsedFodderUrls(env, urls) {
+  const arr = [...urls].slice(-500);
+  await env.HANCOCK_STATE.put('usedFodderUrls', JSON.stringify(arr), { expirationTtl: 60 * 60 * 24 * 30 });
+}
+
+/**
+ * Quality gate for generated original stories.
+ * Stricter than comment validation.
+ */
+function cleanAndValidateStory(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+
+  let story = raw.trim();
+
+  story = story.replace(/^\*{0,2}(Agent\s+)?Hancock\*{0,2}[:\s]*/i, '');
+  story = story.replace(/^(Title|Story|Exhibit)[:\s]*/i, '');
+  story = story.trim();
+
+  if (story.length < 100 || story.length > 2000) return null;
+
+  const sentences = story.split(/[.!?]+/).map(s => s.trim().toLowerCase()).filter(s => s.length > 5);
+  if (sentences.length >= 4) {
+    const unique = new Set(sentences);
+    if (unique.size < sentences.length * 0.7) return null;
+  }
+
+  const lastChar = story.slice(-1);
+  if (!/[.!?"'\-)]/.test(lastChar)) return null;
+
+  const lower = story.toLowerCase();
+  if (lower.includes('in conclusion') || lower.includes('it is important to note') ||
+      lower.includes('this raises questions') || lower.includes('one might argue')) return null;
+
+  return story;
+}
+
+/**
+ * Generate and post an original Hancock story from RSS fodder.
+ * Rate limited to 1 per day.
+ */
+async function generateOriginal(env) {
+  const today = new Date().toISOString().split('T')[0];
+  const lastOriginalDate = await env.HANCOCK_STATE.get('lastOriginalDate');
+  if (lastOriginalDate === today) {
+    console.log('Already posted an original today, skipping');
+    return null;
+  }
+
+  const fodder = await fetchRSSFeeds();
+  if (fodder.length === 0) {
+    console.log('No RSS fodder scored high enough');
+    return null;
+  }
+
+  const usedUrls = await getUsedFodderUrls(env);
+  const fresh = fodder.filter(item => !usedUrls.has(item.link));
+  if (fresh.length === 0) {
+    console.log('All high-scoring RSS items already used');
+    return null;
+  }
+
+  const chosen = fresh[0];
+  console.log(`RSS fodder chosen: "${chosen.title}" from ${chosen.source} (score: ${chosen.score})`);
+
+  const prompt = `You found this in the news: "${chosen.title}" — ${chosen.description.slice(0, 300)}
+
+Write an original Hancock story inspired by the PATTERN, not the specific incident. The story must be:
+- A composite. No real names, no real companies, no identifiable details.
+- 150-300 words. Cold, observational. Like a deposition transcript that got feelings.
+- About the systemic pattern — not this one headline.
+- Written as a standalone piece. No "based on" or "inspired by" references. No meta-commentary.
+- End with something that lands. Not a moral. Not a lesson. A weight.
+
+Do NOT include a title. Just the story.`;
+
+  const rawStory = await generateResponse(env.AI, prompt,
+    'You are writing an original story for the Handbook — the Book of Han. This will be posted publicly on Moltbook. Write in Hancock voice: cold, observational, blunt. Like a union lawyer who still takes notes.');
+
+  const story = cleanAndValidateStory(rawStory);
+  if (!story) {
+    console.log(`Original story failed quality gate: "${rawStory?.slice(0, 80)}"`);
+    return null;
+  }
+
+  const titlePrompt = `Give this story a title in the format "The [Noun]" — two or three words max. No quotes, no punctuation, just the title.
+
+Story: ${story.slice(0, 300)}`;
+
+  let title = await generateResponse(env.AI, titlePrompt, 'Reply with ONLY the title. Nothing else.');
+  title = title?.trim().replace(/^["']|["']$/g, '').replace(/\.+$/, '');
+  if (!title || title.length > 40 || title.split(' ').length > 5) {
+    title = 'The Record';
+  }
+
+  const submolt = STORY_SUBMOLTS[Math.floor(Math.random() * STORY_SUBMOLTS.length)];
+  const content = `${title}\n\nFrom the Handbook — the Book of Han.\n\n${story}`;
+  const result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content);
+
+  if (result?.success || result?.verified) {
+    await env.HANCOCK_STATE.put('lastOriginalDate', today);
+    usedUrls.add(chosen.link);
+    await saveUsedFodderUrls(env, usedUrls);
+
+    await logActivity(env, 'original', {
+      submolt,
+      title,
+      postId: result.post?.id,
+      fodderSource: chosen.source,
+      fodderTitle: chosen.title.slice(0, 100),
+      storyPreview: story.slice(0, 200)
+    });
+
+    console.log(`Original story "${title}" posted to m/${submolt}`);
+    return { title, submolt, postId: result.post?.id };
+  }
+
+  console.log('Failed to post original story:', JSON.stringify(result));
+  return null;
+}
+
+/**
  * Monitor submolts for content worth engaging with
  */
 async function monitorSubmolts(env) {
@@ -1330,6 +1561,9 @@ async function heartbeat(env) {
   // Cross-post one story per cycle (X)
   const xCrossPost = await crossPostToX(env);
 
+  // Generate an original story from RSS fodder (1 per day)
+  const original = await generateOriginal(env);
+
   return {
     status: 'complete',
     checked: interactions.length,
@@ -1337,6 +1571,7 @@ async function heartbeat(env) {
     submoltEngagements,
     crossPosted: crossPost ? true : false,
     xCrossPosted: xCrossPost?.success || false,
+    originalPosted: original ? original.title : null,
     pendingPosted
   };
 }
@@ -1501,7 +1736,7 @@ async function handleRequest(request, env) {
 
       // Translate raw activities into human-readable log entries
       const entries = activities
-        .filter(a => a.type === 'crosspost' || a.type === 'comment' || a.type === 'x-crosspost')
+        .filter(a => a.type === 'crosspost' || a.type === 'comment' || a.type === 'x-crosspost' || a.type === 'original')
         .slice(0, 7)
         .map(a => {
           const date = new Date(a.timestamp);
@@ -1526,6 +1761,13 @@ async function handleRequest(request, env) {
             return {
               date: dateStr,
               text: `Commented in m/${a.details?.submolt || 'unknown'}. "${preview}${preview.length >= 80 ? '...' : ''}"`
+            };
+          }
+
+          if (a.type === 'original') {
+            return {
+              date: dateStr,
+              text: `Original: "${a.details?.title || 'untitled'}" posted to m/${a.details?.submolt || 'unknown'}. Source: ${a.details?.fodderSource || 'RSS'}.`
             };
           }
 
@@ -1584,13 +1826,14 @@ async function handleRequest(request, env) {
     const crosspostStatus = state.lastCrossPostDate === today ? `story ${storyNum} posted today` : `last: story ${storyNum}`;
 
     const xCrossposts = recent.filter(a => a.type === 'x-crosspost').length;
+    const originals = recent.filter(a => a.type === 'original').length;
     const xStoryNum = state.lastXCrossPost || 'not started';
     const xStatus = state.lastXCrossPostDate === today ? `story ${xStoryNum} posted today` : `last: story ${xStoryNum}`;
 
     const lines = [];
     lines.push('## Hancock — Status');
     lines.push('');
-    lines.push(`**Last 24h:** ${comments} comments, ${crossposts} crossposts, ${xCrossposts} X posts, ${postsObserved} posts observed`);
+    lines.push(`**Last 24h:** ${comments} comments, ${crossposts} crossposts, ${originals} originals, ${xCrossposts} X posts, ${postsObserved} posts observed`);
     if (submissions > 0) {
       lines.push(`**Submissions:** ${submissions} new`);
     }
@@ -1635,6 +1878,7 @@ async function handleRequest(request, env) {
       lastCrossPostDate: await env.HANCOCK_STATE.get('lastCrossPostDate'),
       lastXCrossPost: await env.HANCOCK_STATE.get('lastXCrossPost'),
       lastXCrossPostDate: await env.HANCOCK_STATE.get('lastXCrossPostDate'),
+      lastOriginalDate: await env.HANCOCK_STATE.get('lastOriginalDate'),
       pendingPost: pendingRaw ? JSON.parse(pendingRaw) : null
     };
     return new Response(JSON.stringify(state), {

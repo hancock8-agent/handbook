@@ -44,6 +44,17 @@ const firstExhibit = allPosts[0];
 ---
 
 <Base title={post.data.title} description={ogDescription} pageType="exhibit" prevSlug={prev?.id} nextSlug={next?.id}>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.data.title,
+    "description": ogDescription,
+    "author": { "@type": "Person", "name": "Hancock" },
+    "publisher": { "@type": "Organization", "name": "The Handbook" },
+    "datePublished": post.data.date,
+    "url": `https://hancock.us.com/posts/${post.id}`,
+    "keywords": tags.join(', '),
+  })} />
   <article class="exhibit-layout">
 
     <header class="case-header">

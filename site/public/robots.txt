@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hancock.us.com/sitemap-index.xml
