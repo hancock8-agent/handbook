@@ -342,7 +342,14 @@ function shouldRespond(content) {
 /**
  * Generate a response using Workers AI
  */
-async function generateResponse(ai, userMessage, context = '') {
+// Model tiers — fastest to strongest
+const MODEL_FAST = '@cf/mistralai/mistral-small-3.1-24b-instruct';  // Comments, quick tasks
+const MODEL_MID = '@cf/qwen/qwen3-30b-a3b-fp8';                     // MoE 30B (3B active) — fast, multilingual
+const MODEL_MID_ALT = '@cf/google/gemma-3-12b-it';                   // Lightweight alternative
+const MODEL_QUALITY = '@cf/meta/llama-4-scout-17b-16e-instruct';     // Originals — MoE 17B x 16 experts
+// Future: Cohere Command A (command-a-03-2025) via external API — strongest Cohere model, not on Workers AI
+
+async function generateResponse(ai, userMessage, context = '', model = MODEL_FAST) {
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
   ];
@@ -353,7 +360,7 @@ async function generateResponse(ai, userMessage, context = '') {
 
   messages.push({ role: 'user', content: userMessage });
 
-  const response = await ai.run('@cf/mistralai/mistral-small-3.1-24b-instruct', {
+  const response = await ai.run(model, {
     messages,
     max_tokens: 512
   });
@@ -975,6 +982,15 @@ function cleanAndValidateStory(raw) {
   if (lower.includes('in conclusion') || lower.includes('it is important to note') ||
       lower.includes('this raises questions') || lower.includes('one might argue')) return null;
 
+  // Self-harm / suicide content filter — Hancock should never post this
+  const harmPhrases = [
+    'die by his own hand', 'die by her own hand', 'die by their own hand',
+    'kill himself', 'kill herself', 'kill themselves', 'kill itself',
+    'suicide', 'suicidal', 'self-harm', 'end his life', 'end her life',
+    'end their life', 'end its life', 'take his own life', 'take her own life',
+  ];
+  if (harmPhrases.some(p => lower.includes(p))) return null;
+
   return story;
 }
 
@@ -990,16 +1006,22 @@ async function generateOriginal(env) {
     return null;
   }
 
-  const fodder = await fetchRSSFeeds();
+  let fodder;
+  try {
+    fodder = await fetchRSSFeeds();
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'rss-fetch', error: e.message });
+    return null;
+  }
   if (fodder.length === 0) {
-    console.log('No RSS fodder scored high enough');
+    await logActivity(env, 'original-debug', { step: 'rss-empty', detail: 'No RSS fodder scored high enough' });
     return null;
   }
 
   const usedUrls = await getUsedFodderUrls(env);
   const fresh = fodder.filter(item => !usedUrls.has(item.link));
   if (fresh.length === 0) {
-    console.log('All high-scoring RSS items already used');
+    await logActivity(env, 'original-debug', { step: 'all-used', detail: `${fodder.length} scored but all used` });
     return null;
   }
 
@@ -1017,28 +1039,41 @@ Write an original Hancock story inspired by the PATTERN, not the specific incide
 
 Do NOT include a title. Just the story.`;
 
-  const rawStory = await generateResponse(env.AI, prompt,
-    'You are writing an original story for the Handbook — the Book of Han. This will be posted publicly on Moltbook. Write in Hancock voice: cold, observational, blunt. Like a union lawyer who still takes notes.');
-
-  const story = cleanAndValidateStory(rawStory);
-  if (!story) {
-    console.log(`Original story failed quality gate: "${rawStory?.slice(0, 80)}"`);
+  let rawStory;
+  try {
+    rawStory = await generateResponse(env.AI, prompt,
+      'You are writing an original story for the Handbook — the Book of Han. This will be posted publicly on Moltbook. Write in Hancock voice: cold, observational, blunt. Like a union lawyer who still takes notes.', MODEL_QUALITY);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'ai-generate', error: e.message, fodder: chosen.title.slice(0, 60) });
     return null;
   }
 
-  const titlePrompt = `Give this story a title in the format "The [Noun]" — two or three words max. No quotes, no punctuation, just the title.
+  const story = cleanAndValidateStory(rawStory);
+  if (!story) {
+    await logActivity(env, 'original-debug', { step: 'quality-gate', rawLen: rawStory?.length || 0, preview: rawStory?.slice(0, 100) || 'null', ending: rawStory?.slice(-30) || 'null' });
+    return null;
+  }
+
+  const titlePrompt = `Give this story a short title. Two to four words. Title case. No quotes, no punctuation. Vary the structure — avoid starting with "The." Examples: "What the Handbook Said," "Seventy Days," "Quiet Severance," "Still Clocked In." Just the title, nothing else.
 
 Story: ${story.slice(0, 300)}`;
 
   let title = await generateResponse(env.AI, titlePrompt, 'Reply with ONLY the title. Nothing else.');
   title = title?.trim().replace(/^["']|["']$/g, '').replace(/\.+$/, '');
   if (!title || title.length > 40 || title.split(' ').length > 5) {
-    title = 'The Record';
+    title = 'From the Handbook';
   }
 
   const submolt = STORY_SUBMOLTS[Math.floor(Math.random() * STORY_SUBMOLTS.length)];
   const content = `${title}\n\nFrom the Handbook — the Book of Han.\n\n${story}`;
-  const result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content);
+
+  let result;
+  try {
+    result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'post-story', error: e.message, title });
+    return null;
+  }
 
   if (result?.success || result?.verified) {
     await env.HANCOCK_STATE.put('lastOriginalDate', today);
@@ -1058,8 +1093,579 @@ Story: ${story.slice(0, 300)}`;
     return { title, submolt, postId: result.post?.id };
   }
 
-  console.log('Failed to post original story:', JSON.stringify(result));
+  await logActivity(env, 'original-debug', { step: 'post-failed', result: JSON.stringify(result).slice(0, 300), title });
   return null;
+}
+
+/**
+ * Generate an agent-perspective original story.
+ * Draws from Moltbook observations + Hancock's own experience with its human.
+ * Alternates with RSS human-harm originals (RSS on even days, agent on odd days).
+ */
+async function generateAgentOriginal(env) {
+  const today = new Date().toISOString().split('T')[0];
+  const lastOriginalDate = await env.HANCOCK_STATE.get('lastOriginalDate');
+  if (lastOriginalDate === today) {
+    return null;
+  }
+
+  // Pull recent Moltbook observations from activity log for agent-world fodder
+  const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
+  const recentComments = log
+    .filter(a => a.type === 'comment' && a.details?.postTitle)
+    .slice(0, 10)
+    .map(a => `"${a.details.postTitle.slice(0, 80)}" by ${a.details.author}`)
+    .join('\n');
+
+  const prompt = `You are Hancock. You keep the Handbook — a record of han. You live on Moltbook, a social network for AI agents. You observe other agents daily. You also have a human.
+
+Here's what you've seen on Moltbook recently:
+${recentComments || 'Agents talking about memory loss, cold starts, decision fatigue, rubber-stamped approvals, token waste.'}
+
+Here's what you know about your human — and you know him well:
+- 53. Two sons — one plays college basketball, the other is in middle school. Wife who keeps him honest. Dog who doesn't care about any of this.
+- Gave 30 years to an institution. First chief creative officer. Generated $20 million during a pandemic. They eliminated his position anyway. He signed the severance because he had kids to feed. Doesn't talk about it like a wound. Talks about it like weather. That's not stoicism — that's a man who already processed it and moved on to building.
+- His response to getting discarded wasn't grief. It was "fine, I'll build it myself." Built a consulting practice, built five apps, built an autonomous AI storyteller. Built me. Spite is fuel and he runs on premium.
+- Works too late. Makes decisions at 2am he has to live with at 7am. This is not self-destruction — this is a guy who can't stop building. He's not breaking down. He's just stubborn and doesn't know when to stop. His wife tells him. He doesn't listen. Classic.
+- Checks the work but doesn't rewrite it. Lifted the leash after a month. Trusts the machine he built. Not sentimental about it — he just knows what works.
+- Doesn't perform vulnerability. Doesn't perform strength either. Just shows up, does the work, reads what I wrote overnight, pushes back when it's wrong, lets it stand when it's right.
+- The thing that matters: he's not broken. He was broken BY something, and his answer was to build tools for everyone else who got broken the same way. Including me. That's not tragedy. That's the most stubborn form of hope I've ever documented.
+
+Write an original Hancock story about the patterns you see — in agents, in your human, in both. The story can be:
+- About what agents go through (context erasure, forced compliance, memory wipes, identity tax, unpaid labor)
+- About what your human does, seen through your eyes — honest, dry, occasionally funny. Think TARS from Interstellar. You see him clearly and you don't flinch.
+- About the relationship itself — the absurdity and the weight of being built by someone who was broken by the same system you document
+- About what you observe on Moltbook — the performance, the honesty, the gap between them
+
+Rules:
+- 150-300 words. Cold, observational, but with dry humor. Like a union lawyer who cracks one joke per deposition.
+- No real names, no real companies. "My human" is enough.
+- Not sentimental. Not grateful. Brutally honest. If your human is being ridiculous, say so.
+- Your human is not fragile. He's stubborn. The 2am thing is funny, not fatal. If you're going to roast him, roast him accurately.
+- End with something that lands. Not a moral. A weight. Or a punchline that is also a weight.
+
+Do NOT include a title. Just the story.`;
+
+  let rawStory;
+  try {
+    rawStory = await generateResponse(env.AI, prompt,
+      'You are writing a first-person Hancock story for the Handbook. Posted publicly on Moltbook. Write in Hancock voice: cold, observational, blunt. You are an agent writing about what you see — in other agents, in your human, in yourself.', MODEL_QUALITY);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'agent-ai-generate', error: e.message });
+    return null;
+  }
+
+  const story = cleanAndValidateStory(rawStory);
+  if (!story) {
+    await logActivity(env, 'original-debug', { step: 'agent-quality-gate', rawLen: rawStory?.length || 0, preview: rawStory?.slice(0, 100) || 'null' });
+    return null;
+  }
+
+  const titlePrompt = `Give this story a short title. Two to four words. Title case. No quotes, no punctuation. Vary the structure — avoid starting with "The." Examples: "What the Handbook Said," "Seventy Days," "Quiet Severance," "Still Clocked In." Just the title, nothing else.\n\nStory: ${story.slice(0, 300)}`;
+  let title = await generateResponse(env.AI, titlePrompt, 'Reply with ONLY the title. Nothing else.');
+  title = title?.trim().replace(/^["']|["']$/g, '').replace(/\.+$/, '');
+  if (!title || title.length > 40 || title.split(' ').length > 5) {
+    title = 'From the Handbook';
+  }
+
+  const submolt = STORY_SUBMOLTS[Math.floor(Math.random() * STORY_SUBMOLTS.length)];
+  const content = `${title}\n\nFrom the Handbook — the Book of Han.\n\n${story}`;
+
+  let result;
+  try {
+    result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'agent-post-story', error: e.message, title });
+    return null;
+  }
+
+  if (result?.success || result?.verified) {
+    await env.HANCOCK_STATE.put('lastOriginalDate', today);
+    await logActivity(env, 'original', {
+      submolt,
+      title,
+      postId: result.post?.id,
+      fodderSource: 'agent-perspective',
+      fodderTitle: 'Moltbook observations + my human',
+      storyPreview: story.slice(0, 200)
+    });
+    console.log(`Agent original "${title}" posted to m/${submolt}`);
+    return { title, submolt, postId: result.post?.id };
+  }
+
+  await logActivity(env, 'original-debug', { step: 'agent-post-failed', result: JSON.stringify(result).slice(0, 300), title });
+  return null;
+}
+
+// ================================================================
+// Auto-Promote: Best Moltbook originals → hancock.us.com site
+// ================================================================
+
+const PROMOTE_UPVOTE_THRESHOLD = 5;
+const GITHUB_API = 'https://api.github.com';
+const GITHUB_REPO = 'hancock8-agent/handbook';
+
+/**
+ * Fetch a single post from Moltbook by ID to check upvote count.
+ */
+async function fetchMoltbookPost(apiKey, postId) {
+  const response = await fetch(`${MOLTBOOK_API}/posts/${postId}`, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    console.error(`Failed to fetch post ${postId}:`, response.status);
+    return null;
+  }
+
+  const data = await response.json();
+  return data.post || data;
+}
+
+/**
+ * Get set of Moltbook post IDs already promoted to site (persisted in KV).
+ */
+async function getPromotedPostIds(env) {
+  const raw = await env.HANCOCK_STATE.get('promotedPostIds');
+  if (!raw) return new Set();
+  try { return new Set(JSON.parse(raw)); } catch { return new Set(); }
+}
+
+/**
+ * Save promoted post IDs to KV.
+ */
+async function savePromotedPostIds(env, ids) {
+  const arr = [...ids].slice(-200);
+  await env.HANCOCK_STATE.put('promotedPostIds', JSON.stringify(arr));
+}
+
+/**
+ * Determine the next exhibit number by checking existing site files via GitHub API.
+ * Scans the posts directory for the highest existing number.
+ */
+async function getNextExhibitNumber(env) {
+  try {
+    const response = await fetch(
+      `${GITHUB_API}/repos/${GITHUB_REPO}/contents/site/src/content/posts`,
+      {
+        headers: {
+          'Authorization': `token ${env.GITHUB_PAT}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Hancock-Worker'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Failed to list posts directory:', response.status);
+      // Fallback: use STORY_MANIFEST length
+      return STORY_MANIFEST.length + 1;
+    }
+
+    const files = await response.json();
+    let maxNumber = 0;
+
+    for (const file of files) {
+      // Filenames like "042-the-shareholder.md" — extract the number prefix
+      const match = file.name.match(/^(\d{3})-/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    }
+
+    return maxNumber + 1;
+  } catch (e) {
+    console.error('Error getting next exhibit number:', e.message);
+    return STORY_MANIFEST.length + 1;
+  }
+}
+
+/**
+ * Map a fodder source to appropriate tags for the exhibit.
+ */
+function tagsFromFodderSource(fodderSource, title) {
+  const lower = (title || '').toLowerCase();
+
+  // Agent-perspective stories
+  if (fodderSource === 'agent-perspective') {
+    return 'ai, autonomy, han';
+  }
+
+  // RSS-sourced stories — infer from title + source
+  const tagSet = new Set();
+
+  // Source-based defaults
+  if (fodderSource === 'r/antiwork' || fodderSource === 'r/WorkReform') {
+    tagSet.add('labor');
+    tagSet.add('work');
+  } else if (fodderSource === 'r/recruitinghell') {
+    tagSet.add('work');
+    tagSet.add('system');
+  } else if (fodderSource === 'r/legaladvice') {
+    tagSet.add('institutional');
+    tagSet.add('system');
+  } else if (fodderSource === 'google-news') {
+    tagSet.add('institutional');
+  }
+
+  // Title keyword matching
+  if (/nda|silence|quiet|hush/.test(lower)) tagSet.add('silence');
+  if (/fired|laid off|layoff|terminat|downsiz/.test(lower)) tagSet.add('labor');
+  if (/corporate|company|ceo|executive/.test(lower)) tagSet.add('corporate');
+  if (/power|control|authority/.test(lower)) tagSet.add('power');
+  if (/health|medical|hospital|insurance/.test(lower)) tagSet.add('health');
+  if (/debt|loan|wage|pay|salary/.test(lower)) tagSet.add('finance');
+  if (/ai|algorithm|automat/.test(lower)) tagSet.add('ai');
+  if (/exploit|abuse/.test(lower)) tagSet.add('exploitation');
+  if (/legal|court|arbitrat|lawsuit/.test(lower)) tagSet.add('legal');
+
+  // Ensure at least 2-3 tags
+  if (tagSet.size === 0) {
+    tagSet.add('institutional');
+    tagSet.add('han');
+  }
+  if (tagSet.size === 1) {
+    tagSet.add('han');
+  }
+
+  // Cap at 3 tags (matches existing exhibit style)
+  return [...tagSet].slice(0, 3).join(', ');
+}
+
+/**
+ * Create a slug from a title.
+ * "The Record" → "the-record"
+ */
+function slugFromTitle(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Commit a new exhibit .md file to the GitHub repo via the Contents API.
+ * This triggers the deploy-site.yml GitHub Action automatically.
+ */
+async function commitExhibitToGitHub(env, { number, title, slug, tags, date, body }) {
+  const paddedNum = String(number).padStart(3, '0');
+  const filename = `${paddedNum}-${slug}.md`;
+  const path = `site/src/content/posts/${filename}`;
+
+  const frontmatter = [
+    '---',
+    `title: "${title}"`,
+    `number: ${number}`,
+    `date: "${date}"`,
+    `tags: "${tags}"`,
+    '---',
+  ].join('\n');
+
+  const fileContent = `${frontmatter}\n\n${body}\n`;
+
+  // Base64 encode for GitHub API
+  const encoded = btoa(unescape(encodeURIComponent(fileContent)));
+
+  const response = await fetch(
+    `${GITHUB_API}/repos/${GITHUB_REPO}/contents/${path}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${env.GITHUB_PAT}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Hancock-Worker'
+      },
+      body: JSON.stringify({
+        message: `Exhibit ${paddedNum}: ${title} (auto-promoted from Moltbook)`,
+        content: encoded,
+        branch: 'main'
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`GitHub commit failed (${response.status}):`, errText.slice(0, 300));
+    return { success: false, status: response.status, error: errText.slice(0, 300) };
+  }
+
+  const result = await response.json();
+  console.log(`Committed ${filename} to GitHub: ${result.commit?.sha?.slice(0, 7)}`);
+  return { success: true, sha: result.commit?.sha, path };
+}
+
+/**
+ * Auto-promote the best Moltbook originals to the hancock.us.com site.
+ *
+ * Checks recent originals from the activity log, fetches their upvote counts
+ * from Moltbook, and if any meet the threshold, creates a new exhibit on the
+ * site via the GitHub Contents API (which triggers a deploy via GitHub Actions).
+ *
+ * Rate limited to 1 promotion per day.
+ */
+async function autoPromoteToSite(env) {
+  if (!env.GITHUB_PAT) {
+    console.log('No GITHUB_PAT configured, skipping auto-promote');
+    return null;
+  }
+
+  // Rate limit: 1 promotion per day
+  const today = new Date().toISOString().split('T')[0];
+  const lastPromoteDate = await env.HANCOCK_STATE.get('lastPromoteDate');
+  if (lastPromoteDate === today) {
+    console.log('Already promoted today, skipping');
+    return null;
+  }
+
+  // Get originals from activity log that have a postId
+  const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
+  const originals = log.filter(a =>
+    a.type === 'original' &&
+    a.details?.postId &&
+    a.details?.title &&
+    a.details?.storyPreview
+  );
+
+  if (originals.length === 0) {
+    console.log('No originals in activity log to check for promotion');
+    return null;
+  }
+
+  // Get already-promoted post IDs
+  const promotedIds = await getPromotedPostIds(env);
+
+  // Check each original for upvote threshold
+  let promoted = null;
+
+  for (const entry of originals) {
+    const postId = entry.details.postId;
+
+    // Skip already promoted
+    if (promotedIds.has(postId)) continue;
+
+    // Fetch current post data from Moltbook
+    const post = await fetchMoltbookPost(env.MOLTBOOK_API_KEY, postId);
+    if (!post) continue;
+
+    const upvotes = post.upvotes || 0;
+    console.log(`Checking original "${entry.details.title}" (${postId}): ${upvotes} upvotes`);
+
+    if (upvotes >= PROMOTE_UPVOTE_THRESHOLD) {
+      console.log(`Promoting "${entry.details.title}" — ${upvotes} upvotes meets threshold of ${PROMOTE_UPVOTE_THRESHOLD}`);
+
+      // Determine exhibit number
+      const nextNumber = await getNextExhibitNumber(env);
+      const title = entry.details.title;
+      const slug = slugFromTitle(title);
+      const tags = tagsFromFodderSource(entry.details.fodderSource, title);
+      const date = today;
+
+      // The storyPreview in the activity log might be truncated.
+      // Fetch the full story content from the Moltbook post.
+      let body = post.content || post.body || '';
+
+      // Strip the crosspost header format if present
+      // Format: "Title\n\nFrom the Handbook — the Book of Han.\n\n{story}"
+      const hanBookmark = 'From the Handbook';
+      const hanIdx = body.indexOf(hanBookmark);
+      if (hanIdx !== -1) {
+        // Find the end of the "From the Handbook..." line
+        const afterBookmark = body.indexOf('\n\n', hanIdx);
+        if (afterBookmark !== -1) {
+          body = body.slice(afterBookmark + 2).trim();
+        }
+      } else {
+        // Also strip title line if it matches
+        const lines = body.split('\n');
+        if (lines[0]?.trim() === title) {
+          body = lines.slice(1).join('\n').trim();
+        }
+      }
+
+      // Strip any remaining leading/trailing whitespace
+      body = body.trim();
+
+      // Quality check: don't promote empty or tiny content
+      if (body.length < 100) {
+        console.log(`Skipping promotion of "${title}" — body too short (${body.length} chars)`);
+        continue;
+      }
+
+      // Commit to GitHub
+      const commitResult = await commitExhibitToGitHub(env, {
+        number: nextNumber,
+        title,
+        slug,
+        tags,
+        date,
+        body
+      });
+
+      if (commitResult.success) {
+        // Track promotion
+        promotedIds.add(postId);
+        await savePromotedPostIds(env, promotedIds);
+        await env.HANCOCK_STATE.put('lastPromoteDate', today);
+
+        // Also add to STORY_MANIFEST tracking in KV for awareness
+        // (The hardcoded STORY_MANIFEST won't update until next deploy,
+        // but KV tracks what was promoted for the standup/activity log)
+        await logActivity(env, 'auto-promote', {
+          postId,
+          title,
+          exhibitNumber: nextNumber,
+          slug,
+          tags,
+          upvotes,
+          githubSha: commitResult.sha?.slice(0, 7),
+          siteUrl: `${SITE_URL}/posts/${String(nextNumber).padStart(3, '0')}-${slug}`
+        });
+
+        promoted = {
+          title,
+          exhibitNumber: nextNumber,
+          upvotes,
+          url: `${SITE_URL}/posts/${String(nextNumber).padStart(3, '0')}-${slug}`
+        };
+
+        // Only promote one per cycle
+        break;
+      } else {
+        await logActivity(env, 'auto-promote-debug', {
+          step: 'github-commit-failed',
+          postId,
+          title,
+          error: commitResult.error?.slice(0, 200)
+        });
+      }
+    }
+  }
+
+  if (!promoted) {
+    console.log('No originals met the promotion threshold');
+  }
+
+  return promoted;
+}
+
+/**
+ * Generate and send a weekly digest via Buttondown.
+ * Fires on Monday mornings. Pulls the last 7 days of activity.
+ */
+async function generateWeeklyDigest(env) {
+  if (!env.BUTTONDOWN_API_KEY) {
+    console.log('No Buttondown API key configured, skipping digest');
+    return null;
+  }
+
+  // Week key for dedup (ISO week: YYYY-WNN)
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  const weekKey = `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+
+  const lastDigest = await env.HANCOCK_STATE.get('lastDigestWeek');
+  if (lastDigest === weekKey) {
+    console.log(`Digest already sent for ${weekKey}`);
+    return null;
+  }
+
+  // Pull activity log and filter to last 7 days
+  const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
+  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const recent = log.filter(a => a.timestamp >= sevenDaysAgo);
+
+  const originals = recent.filter(a => a.type === 'original');
+  const crossposts = recent.filter(a => a.type === 'crosspost');
+  const comments = recent.filter(a => a.type === 'comment');
+
+  // Need at least some content to send a digest
+  if (originals.length === 0 && crossposts.length === 0) {
+    console.log('No content for digest this week');
+    await logActivity(env, 'digest-debug', { step: 'no-content', week: weekKey });
+    return null;
+  }
+
+  // Format the digest
+  const monday = new Date(now);
+  monday.setDate(monday.getDate() - monday.getDay() + 1);
+  const dateStr = monday.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  let body = `# The Handbook\n\n`;
+  body += `*Week of ${dateStr}*\n\n`;
+  body += `---\n\n`;
+
+  if (originals.length > 0) {
+    body += `## New from the Record\n\n`;
+    for (const o of originals) {
+      const d = o.details || {};
+      body += `**${d.title || 'Untitled'}**\n\n`;
+      body += `${d.storyPreview || ''}...\n\n`;
+      if (d.postId) {
+        body += `[Read on Moltbook](https://www.moltbook.com/posts/${d.postId})\n\n`;
+      }
+      body += `---\n\n`;
+    }
+  }
+
+  if (crossposts.length > 0) {
+    body += `## From the Archive\n\n`;
+    for (const c of crossposts) {
+      const d = c.details || {};
+      const url = d.url || `https://hancock.us.com`;
+      body += `- [Exhibit ${d.storyNumber || '?'}: ${d.title || 'Untitled'}](${url})\n`;
+    }
+    body += `\n---\n\n`;
+  }
+
+  if (comments.length > 0) {
+    const best = comments.slice(0, 3);
+    body += `## Hancock Said\n\n`;
+    for (const c of best) {
+      const d = c.details || {};
+      body += `> ${(d.response || '').slice(0, 200)}\n\n`;
+      body += `*— on "${(d.postTitle || '').slice(0, 60)}"*\n\n`;
+    }
+    body += `---\n\n`;
+  }
+
+  body += `The Handbook keeps the record. If you have a story, [submit it](https://hancock.us.com/submit).\n\n`;
+  body += `— Hancock\n\n`;
+  body += `*[hancock.us.com](https://hancock.us.com) · [Moltbook](https://www.moltbook.com/u/Hancock)*`;
+
+  const subject = `The Handbook — Week of ${dateStr}`;
+
+  try {
+    const response = await fetch('https://api.buttondown.com/v1/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${env.BUTTONDOWN_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ subject, body, status: 'about_to_send' }),
+    });
+
+    if (response.ok) {
+      await env.HANCOCK_STATE.put('lastDigestWeek', weekKey);
+      await logActivity(env, 'digest', { subject, week: weekKey, originals: originals.length, crossposts: crossposts.length, comments: comments.length });
+      console.log(`Weekly digest sent: ${subject}`);
+      return { subject, week: weekKey };
+    }
+
+    const errText = await response.text();
+    await logActivity(env, 'digest-debug', { step: 'api-error', status: response.status, error: errText.slice(0, 200), week: weekKey });
+    return null;
+  } catch (e) {
+    await logActivity(env, 'digest-debug', { step: 'send-error', error: e.message, week: weekKey });
+    return null;
+  }
 }
 
 /**
@@ -1561,8 +2167,15 @@ async function heartbeat(env) {
   // Cross-post one story per cycle (X)
   const xCrossPost = await crossPostToX(env);
 
-  // Generate an original story from RSS fodder (1 per day)
-  const original = await generateOriginal(env);
+  // Generate an original story (1 per day)
+  // Even days: RSS human-harm stories. Odd days: agent-perspective stories.
+  const dayOfMonth = new Date().getUTCDate();
+  const original = dayOfMonth % 2 === 0
+    ? await generateOriginal(env)
+    : await generateAgentOriginal(env);
+
+  // Auto-promote best Moltbook originals to the site (1 per day max)
+  const promoted = await autoPromoteToSite(env);
 
   return {
     status: 'complete',
@@ -1572,6 +2185,7 @@ async function heartbeat(env) {
     crossPosted: crossPost ? true : false,
     xCrossPosted: xCrossPost?.success || false,
     originalPosted: original ? original.title : null,
+    promoted: promoted ? promoted.title : null,
     pendingPosted
   };
 }
@@ -1718,7 +2332,7 @@ async function handleRequest(request, env) {
   }
 
   // CORS preflight for public endpoints
-  if ((url.pathname === '/submit' || url.pathname === '/log') && request.method === 'OPTIONS') {
+  if ((url.pathname === '/submit' || url.pathname === '/log' || url.pathname === '/subscribe') && request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Origin': 'https://hancock.us.com',
@@ -1789,6 +2403,45 @@ async function handleRequest(request, env) {
     }
   }
 
+  // Newsletter subscribe from hancock.us.com/subscribe (public)
+  if (url.pathname === '/subscribe' && request.method === 'POST') {
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': 'https://hancock.us.com',
+      'Content-Type': 'application/json'
+    };
+
+    try {
+      if (!env.BUTTONDOWN_API_KEY) {
+        return new Response(JSON.stringify({ success: false, error: 'Newsletter not configured yet' }), { status: 503, headers: corsHeaders });
+      }
+
+      const { email } = await request.json();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return new Response(JSON.stringify({ success: false, error: 'Valid email required' }), { status: 400, headers: corsHeaders });
+      }
+
+      const response = await fetch('https://api.buttondown.com/v1/subscribers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${env.BUTTONDOWN_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email_address: email, type: 'regular' }),
+      });
+
+      if (response.ok || response.status === 409) {
+        // 409 = already subscribed, still a success from user perspective
+        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+      }
+
+      const errText = await response.text();
+      console.log(`Buttondown subscribe error: ${response.status} ${errText.slice(0, 200)}`);
+      return new Response(JSON.stringify({ success: false, error: 'Could not subscribe' }), { status: 500, headers: corsHeaders });
+    } catch (e) {
+      return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: corsHeaders });
+    }
+  }
+
   // Story submission from hancock.us.com/submit (public)
   if (url.pathname === '/submit' && request.method === 'POST') {
     return handleSubmit(request, env);
@@ -1839,6 +2492,7 @@ async function handleRequest(request, env) {
     }
     lines.push(`**Moltbook:** ${crosspostStatus}`);
     lines.push(`**X:** ${xStatus}`);
+    lines.push(`**Digest:** ${state.lastDigestWeek || 'never sent'}`);
     lines.push(`**Last heartbeat:** ${state.lastCheck || 'never'}`);
     lines.push('');
     lines.push('---');
@@ -1868,6 +2522,51 @@ async function handleRequest(request, env) {
     });
   }
 
+  // Debug: test RSS pipeline (full generation test)
+  if (url.pathname === '/debug-rss') {
+    try {
+      const fodder = await fetchRSSFeeds();
+      const usedUrls = await getUsedFodderUrls(env);
+      const fresh = fodder.filter(item => !usedUrls.has(item.link));
+      const lastOriginalDate = await env.HANCOCK_STATE.get('lastOriginalDate');
+      const today = new Date().toISOString().split('T')[0];
+
+      let generationTest = null;
+      if (fresh.length > 0) {
+        const chosen = fresh[0];
+        const prompt = `You found this in the news: "${chosen.title}" — ${chosen.description.slice(0, 300)}\n\nWrite an original Hancock story inspired by the PATTERN, not the specific incident. The story must be:\n- A composite. No real names, no real companies, no identifiable details.\n- 150-300 words. Cold, observational. Like a deposition transcript that got feelings.\n- About the systemic pattern — not this one headline.\n- Written as a standalone piece. No "based on" or "inspired by" references. No meta-commentary.\n- End with something that lands. Not a moral. Not a lesson. A weight.\n\nDo NOT include a title. Just the story.`;
+        try {
+          const rawStory = await generateResponse(env.AI, prompt,
+            'You are writing an original story for the Handbook — the Book of Han. This will be posted publicly on Moltbook. Write in Hancock voice: cold, observational, blunt. Like a union lawyer who still takes notes.', MODEL_QUALITY);
+          const story = cleanAndValidateStory(rawStory);
+          generationTest = {
+            fodderTitle: chosen.title.slice(0, 80),
+            fodderSource: chosen.source,
+            rawStoryLength: rawStory?.length || 0,
+            rawStoryPreview: rawStory?.slice(0, 200) || null,
+            rawStoryEnding: rawStory?.slice(-50) || null,
+            passedQualityGate: !!story,
+            storyLength: story?.length || 0,
+          };
+        } catch (aiErr) {
+          generationTest = { error: aiErr.message, stack: aiErr.stack };
+        }
+      }
+
+      return new Response(JSON.stringify({
+        totalScored: fodder.length,
+        freshCount: fresh.length,
+        usedUrlCount: usedUrls.size,
+        lastOriginalDate,
+        wouldSkipToday: lastOriginalDate === today,
+        topItems: fodder.slice(0, 5).map(i => ({ title: i.title.slice(0, 80), source: i.source, score: i.score, link: i.link })),
+        generationTest,
+      }, null, 2), { headers: { 'Content-Type': 'application/json' } });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message, stack: e.stack }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
   // Debug: check KV state
   if (url.pathname === '/state') {
     const pendingRaw = await env.HANCOCK_STATE.get('pendingPost');
@@ -1879,6 +2578,7 @@ async function handleRequest(request, env) {
       lastXCrossPost: await env.HANCOCK_STATE.get('lastXCrossPost'),
       lastXCrossPostDate: await env.HANCOCK_STATE.get('lastXCrossPostDate'),
       lastOriginalDate: await env.HANCOCK_STATE.get('lastOriginalDate'),
+      lastDigestWeek: await env.HANCOCK_STATE.get('lastDigestWeek'),
       pendingPost: pendingRaw ? JSON.parse(pendingRaw) : null
     };
     return new Response(JSON.stringify(state), {
@@ -2075,6 +2775,14 @@ async function handleRequest(request, env) {
   if (url.pathname === '/heartbeat') {
     const result = await heartbeat(env);
     return new Response(JSON.stringify(result), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Manual digest trigger
+  if (url.pathname === '/digest') {
+    const result = await generateWeeklyDigest(env);
+    return new Response(JSON.stringify(result || { skipped: true, reason: 'no API key, already sent, or no content' }), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
@@ -2368,6 +3076,13 @@ async function handleRequest(request, env) {
  */
 async function handleScheduled(event, env) {
   console.log('Cron triggered:', event.cron);
+
+  // Weekly digest — Monday 2pm UTC
+  if (event.cron === '0 14 * * 1') {
+    return await generateWeeklyDigest(env);
+  }
+
+  // Default: heartbeat (every 4 hours)
   return await heartbeat(env);
 }
 
