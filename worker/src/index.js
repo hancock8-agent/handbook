@@ -2169,10 +2169,16 @@ async function heartbeat(env) {
 
   // Generate an original story (1 per day)
   // Even days: RSS human-harm stories. Odd days: agent-perspective stories.
-  const dayOfMonth = new Date().getUTCDate();
-  const original = dayOfMonth % 2 === 0
-    ? await generateOriginal(env)
-    : await generateAgentOriginal(env);
+  // Skip if a crosspost or pending post already went out this cycle (Moltbook 2.5-min cooldown)
+  let original = null;
+  if (!crossPost?.success && !pendingPosted) {
+    const dayOfMonth = new Date().getUTCDate();
+    original = dayOfMonth % 2 === 0
+      ? await generateOriginal(env)
+      : await generateAgentOriginal(env);
+  } else {
+    console.log('Skipping original this cycle: already posted (crosspost or pending). Will retry next cycle.');
+  }
 
   // Auto-promote best Moltbook originals to the site (1 per day max)
   const promoted = await autoPromoteToSite(env);
