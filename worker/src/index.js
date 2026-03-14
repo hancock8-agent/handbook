@@ -2183,6 +2183,20 @@ async function heartbeat(env) {
   // Auto-promote best Moltbook originals to the site (1 per day max)
   const promoted = await autoPromoteToSite(env);
 
+  // Keepalive ping to Supabase (prevents free-tier pause from inactivity)
+  if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+    try {
+      await fetch(`${env.SUPABASE_URL}/rest/v1/hancock_submissions?select=id&limit=1`, {
+        headers: {
+          'apikey': env.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+        }
+      });
+    } catch (e) {
+      console.log('Supabase keepalive failed:', e.message);
+    }
+  }
+
   return {
     status: 'complete',
     checked: interactions.length,
