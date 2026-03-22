@@ -352,6 +352,60 @@ const MODEL_MID_ALT = '@cf/google/gemma-3-12b-it';                   // Lightwei
 const MODEL_QUALITY = '@cf/meta/llama-4-scout-17b-16e-instruct';     // Originals — MoE 17B x 16 experts
 // Future: Cohere Command A (command-a-03-2025) via external API — strongest Cohere model, not on Workers AI
 
+// TTS model for audio narration
+const MODEL_TTS = '@cf/deepgram/aura-2-en';
+const MODEL_TTS_FALLBACK = '@cf/myshell-ai/melotts';
+
+/**
+ * Generate audio narration using Workers AI TTS.
+ * Returns audio ArrayBuffer or null on failure.
+ */
+async function generateAudio(ai, text) {
+  try {
+    const response = await ai.run(MODEL_TTS, {
+      text: text,
+      speaker: 'orpheus',
+    });
+    // Response may be a ReadableStream or ArrayBuffer
+    if (response instanceof ReadableStream) {
+      const reader = response.getReader();
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+      const result = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return result.buffer;
+    }
+    return response;
+  } catch (e) {
+    console.log(`TTS primary failed: ${e.message}`);
+    // Fallback to MeloTTS
+    try {
+      const fallback = await ai.run(MODEL_TTS_FALLBACK, {
+        prompt: text,
+        lang: 'en',
+      });
+      if (fallback?.audio) {
+        // MeloTTS returns base64 audio
+        const bytes = Uint8Array.from(atob(fallback.audio), c => c.charCodeAt(0));
+        return bytes.buffer;
+      }
+      return fallback;
+    } catch (e2) {
+      console.log(`TTS fallback failed: ${e2.message}`);
+      return null;
+    }
+  }
+}
+
 async function generateResponse(ai, userMessage, context = '', model = MODEL_FAST) {
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -2587,9 +2641,88 @@ async function handleRequest(request, env) {
     return handleSubmit(request, env);
   }
 
+  // Public audio endpoint — serve from KV
+  if (url.pathname.startsWith('/media/audio/')) {
+    const slug = url.pathname.replace('/media/audio/', '').replace('.mp3', '');
+    const audioData = await env.HANCOCK_STATE.get(`audio:${slug}`, 'arrayBuffer');
+    if (!audioData) {
+      return new Response('Not found', { status: 404 });
+    }
+    return new Response(audioData, {
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'Cache-Control': 'public, max-age=31536000',
+        'Access-Control-Allow-Origin': 'https://hancock.us.com',
+      },
+    });
+  }
+
   // --- Authenticated endpoints (require X-Worker-Key header) ---
   if (!isAuthorized(request, env)) {
     return unauthorized();
+  }
+
+  // Generate audio for a single story
+  if (url.pathname === '/generate-audio' && request.method === 'POST') {
+    try {
+      const { slug, text } = await request.json();
+      if (!slug || !text) {
+        return new Response(JSON.stringify({ error: 'slug and text required' }), {
+          status: 400, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Check if already generated
+      const existing = await env.HANCOCK_STATE.get(`audio:${slug}`, 'arrayBuffer');
+      if (existing) {
+        return new Response(JSON.stringify({
+          success: true, status: 'exists',
+          url: `/media/audio/${slug}.mp3`,
+        }), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      const audioBytes = await generateAudio(env.AI, text);
+      if (!audioBytes) {
+        return new Response(JSON.stringify({ error: 'TTS generation failed' }), {
+          status: 500, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      await env.HANCOCK_STATE.put(`audio:${slug}`, audioBytes);
+      return new Response(JSON.stringify({
+        success: true, status: 'generated',
+        url: `/media/audio/${slug}.mp3`,
+        bytes: audioBytes.byteLength,
+      }), { headers: { 'Content-Type': 'application/json' } });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // Batch generate audio for all stories in STORY_MANIFEST
+  if (url.pathname === '/generate-all-audio' && request.method === 'POST') {
+    const results = [];
+    for (const story of STORY_MANIFEST) {
+      const existing = await env.HANCOCK_STATE.get(`audio:${story.slug}`, 'arrayBuffer');
+      if (existing) {
+        results.push({ slug: story.slug, status: 'exists' });
+        continue;
+      }
+
+      // Use opener as narration (full text would require manifest expansion)
+      const audioBytes = await generateAudio(env.AI, story.opener);
+      if (audioBytes) {
+        await env.HANCOCK_STATE.put(`audio:${story.slug}`, audioBytes);
+        results.push({ slug: story.slug, status: 'generated', bytes: audioBytes.byteLength });
+      } else {
+        results.push({ slug: story.slug, status: 'failed' });
+      }
+    }
+    return new Response(JSON.stringify({ results, total: results.length }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   // Brief — summary for terminal launch
