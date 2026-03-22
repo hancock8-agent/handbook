@@ -1,5 +1,8 @@
 # build output
 dist/
+
+# generated cards (rebuilt at build time)
+public/cards/
 # generated types
 .astro/
 
