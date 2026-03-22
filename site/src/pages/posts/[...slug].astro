@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import AudioPlayer from '../../components/AudioPlayer.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -92,6 +93,7 @@ const firstExhibit = allPosts[0];
     </aside>
 
     <div class="exhibit-main">
+      <AudioPlayer slug={post.id} />
       <div class="exhibit-content">
         <Content />
       </div>
