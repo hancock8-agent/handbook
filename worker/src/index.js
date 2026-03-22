@@ -2665,20 +2665,23 @@ async function handleRequest(request, env) {
   // Generate audio for a single story
   if (url.pathname === '/generate-audio' && request.method === 'POST') {
     try {
-      const { slug, text } = await request.json();
+      const body = await request.json();
+      const { slug, text } = body;
       if (!slug || !text) {
         return new Response(JSON.stringify({ error: 'slug and text required' }), {
           status: 400, headers: { 'Content-Type': 'application/json' }
         });
       }
 
-      // Check if already generated
-      const existing = await env.HANCOCK_STATE.get(`audio:${slug}`, 'arrayBuffer');
-      if (existing) {
-        return new Response(JSON.stringify({
-          success: true, status: 'exists',
-          url: `/media/audio/${slug}.mp3`,
-        }), { headers: { 'Content-Type': 'application/json' } });
+      // Check if already generated (skip unless force=true)
+      if (!body.force) {
+        const existing = await env.HANCOCK_STATE.get(`audio:${slug}`, 'arrayBuffer');
+        if (existing) {
+          return new Response(JSON.stringify({
+            success: true, status: 'exists',
+            url: `/media/audio/${slug}.mp3`,
+          }), { headers: { 'Content-Type': 'application/json' } });
+        }
       }
 
       const audioBytes = await generateAudio(env.AI, text);
