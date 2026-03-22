@@ -43,7 +43,7 @@ const related = currentTags.length > 0
 const firstExhibit = allPosts[0];
 ---
 
-<Base title={post.data.title} description={ogDescription} pageType="exhibit" prevSlug={prev?.id} nextSlug={next?.id}>
+<Base title={post.data.title} description={ogDescription} pageType="exhibit" prevSlug={prev?.id} nextSlug={next?.id} ogImage={`https://hancock.us.com/cards/${post.id}.png`}>
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Article",
