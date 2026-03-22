@@ -1959,6 +1959,64 @@ async function postToX(env, text) {
 }
 
 /**
+ * Post a thread to X (array of tweets, each replying to the previous).
+ * Returns the first tweet's ID and URL.
+ */
+async function postThreadToX(env, tweets) {
+  if (!env.X_API_KEY || !env.X_ACCESS_TOKEN) {
+    return { success: false, reason: 'no_credentials' };
+  }
+
+  const url = `${X_API_BASE}/tweets`;
+  let previousTweetId = null;
+  let firstTweetId = null;
+
+  for (let i = 0; i < tweets.length; i++) {
+    try {
+      const authHeader = await buildOAuthHeader('POST', url, env);
+      const payload = { text: tweets[i] };
+      if (previousTweetId) {
+        payload.reply = { in_reply_to_tweet_id: previousTweetId };
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.status === 429) {
+        console.log(`X thread rate limited at tweet ${i + 1}/${tweets.length}`);
+        return { success: i > 0, partial: true, tweetId: firstTweetId, url: firstTweetId ? `https://x.com/Hancock137839/status/${firstTweetId}` : null };
+      }
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.log(`X thread tweet ${i + 1} failed (${response.status}): ${error}`);
+        return { success: i > 0, partial: true, tweetId: firstTweetId, url: firstTweetId ? `https://x.com/Hancock137839/status/${firstTweetId}` : null };
+      }
+
+      const result = await response.json();
+      previousTweetId = result.data?.id;
+      if (i === 0) firstTweetId = previousTweetId;
+      console.log(`X thread tweet ${i + 1}/${tweets.length}: ${previousTweetId}`);
+    } catch (e) {
+      console.log(`X thread error at tweet ${i + 1}: ${e.message}`);
+      return { success: i > 0, partial: true, tweetId: firstTweetId, url: firstTweetId ? `https://x.com/Hancock137839/status/${firstTweetId}` : null };
+    }
+  }
+
+  return {
+    success: true,
+    tweetId: firstTweetId,
+    url: firstTweetId ? `https://x.com/Hancock137839/status/${firstTweetId}` : null
+  };
+}
+
+/**
  * Cross-post a story to X (separate state from Moltbook)
  */
 async function crossPostToX(env) {
@@ -1987,21 +2045,69 @@ async function crossPostToX(env) {
 
   const storyNum = String(nextStory).padStart(3, '0');
   const opener = manifest.opener || '';
-  const text = `${opener}\n\nExhibit ${storyNum}: ${manifest.title}\n${SITE_URL}/posts/${manifest.slug}`;
 
-  const result = await postToX(env, text);
+  // Generate a 3-4 tweet thread from the story opener
+  let threadTweets;
+  try {
+    const threadPrompt = `You are Hancock. You're posting a story thread on X (Twitter). The story is Exhibit ${storyNum}: "${manifest.title}".
+
+The opener: "${opener}"
+Tags: ${(manifest.tags || []).join(', ')}
+
+Write exactly 3 tweets that tell this story as a thread. Rules:
+- Tweet 1: The hook. Start with the opener or a variation of it. Must grab attention in the first line. Under 260 characters.
+- Tweet 2: The weight. The middle of the story — what happened, what it cost, who benefited. Under 260 characters.
+- Tweet 3: The landing. The line that stays with you. Under 260 characters.
+- No hashtags. No emojis. No "thread" or "1/" markers.
+- Hancock voice: cold, observational, blunt. Like a union lawyer at a bar.
+- Each tweet must stand alone but read as a sequence.
+
+Format: Return ONLY the three tweets separated by ---
+Do not number them. Do not add labels.`;
+
+    const threadRaw = await generateResponse(env.AI, threadPrompt,
+      'You are writing a Twitter thread for Hancock. Return exactly 3 tweets separated by --- on its own line. Nothing else.', MODEL_FAST);
+
+    if (threadRaw) {
+      const parts = threadRaw.split(/\n---\n|\n-{3,}\n/).map(t => t.trim()).filter(t => t && t.length > 10 && t.length <= 280);
+      if (parts.length >= 2) {
+        // Add exhibit link to the last tweet
+        const lastTweet = parts[parts.length - 1];
+        const link = `\n\nExhibit ${storyNum}: ${manifest.title}\n${SITE_URL}/posts/${manifest.slug}`;
+        if (lastTweet.length + link.length <= 280) {
+          parts[parts.length - 1] = lastTweet + link;
+        } else {
+          // Add link as a 4th tweet
+          parts.push(`Exhibit ${storyNum}: ${manifest.title}\n\nFrom the Handbook — the Book of Han.\n${SITE_URL}/posts/${manifest.slug}`);
+        }
+        threadTweets = parts;
+      }
+    }
+  } catch (e) {
+    console.log(`Thread generation failed, falling back to single tweet: ${e.message}`);
+  }
+
+  // Fallback: single tweet if thread generation fails
+  if (!threadTweets) {
+    threadTweets = [`${opener}\n\nExhibit ${storyNum}: ${manifest.title}\n${SITE_URL}/posts/${manifest.slug}`];
+  }
+
+  const result = threadTweets.length > 1
+    ? await postThreadToX(env, threadTweets)
+    : await postToX(env, threadTweets[0]);
 
   if (result.success) {
     await env.HANCOCK_STATE.put('lastXCrossPost', String(nextStory));
     await env.HANCOCK_STATE.put('lastXCrossPostDate', today);
     await env.HANCOCK_STATE.put('todayXCrossPostCount', String(todayXCount + 1));
-    console.log(`X cross-posted story ${nextStory} "${manifest.title}" (${todayXCount + 1}/3 today)`);
+    console.log(`X cross-posted story ${nextStory} "${manifest.title}" as ${threadTweets.length}-tweet thread (${todayXCount + 1}/3 today)`);
 
     await logActivity(env, 'x-crosspost', {
       storyNumber: nextStory,
       title: manifest.title,
       tweetId: result.tweetId,
-      url: result.url
+      url: result.url,
+      threadLength: threadTweets.length
     });
   }
 
