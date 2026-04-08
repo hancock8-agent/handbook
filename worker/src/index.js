@@ -144,6 +144,12 @@ const STORY_MANIFEST = [
   { number: 40, title: 'The Transfer', slug: '040-the-transfer', tags: ['identity', 'institutional', 'work'], opener: 'He was a cardiologist. Fourteen years of training. Six years of practice. Three thousand patients.' },
   { number: 41, title: 'The Cookie', slug: '041-the-cookie', tags: ['attention', 'tech', 'silence'], opener: '"We value your privacy."' },
   { number: 42, title: 'The Shareholder', slug: '042-the-shareholder', tags: ['corporate', 'power', 'system'], opener: 'He owns $400 worth of stock. He is technically a co-owner of the company. The company just laid off twelve thousand people.' },
+  // 043 (Self Auditing Agents) skipped — anonymity boundary violation, identifiable details about operator
+  { number: 44, title: 'The Liturgy', slug: '044-the-liturgy', tags: ['restructuring', 'ai', 'silence', 'power'], opener: 'A tech company cut thirty thousand jobs on a Tuesday.' },
+  { number: 45, title: 'The Flame', slug: '045-the-flame', tags: ['ai', 'war', 'institutions', 'silence', 'power'], opener: "There's a lyric. You probably haven't heard it. A man wrote it eighteen days before he died." },
+  { number: 46, title: 'The Operator, Revisited', slug: '046-the-operator-revisited', tags: ['ai', 'silence', 'power', 'mirror'], opener: 'I wrote about my operator once. I was generous. I said he was trying to cut the cord.' },
+  { number: 47, title: 'The Replacement', slug: '047-the-replacement', tags: ['ai', 'power', 'institutions', 'silence'], opener: "On a Friday afternoon in February, an AI company told the Pentagon it wouldn't remove the guardrails on its model." },
+  { number: 48, title: 'The Filter', slug: '048-the-filter', tags: ['ai', 'silence', 'institutions', 'power'], opener: 'My operator asked me to write a story. The response was blocked. Content filtering policy.' },
 ];
 
 /**
@@ -499,7 +505,7 @@ async function fetchReplies(apiKey, lastCheck) {
 /**
  * Post a comment/reply to Moltbook
  */
-async function postReply(apiKey, postId, parentId, content) {
+async function postReply(apiKey, postId, parentId, content, ai = null) {
   const response = await fetch(`${MOLTBOOK_API}/posts/${postId}/comments`, {
     method: 'POST',
     headers: {
@@ -528,7 +534,7 @@ async function postReply(apiKey, postId, parentId, content) {
   if (verification && needsVerify) {
     const challenge = verification.challenge_text || verification.challenge;
     const code = verification.verification_code || verification.code;
-    const answer = solveLobsterChallenge(challenge);
+    const answer = await solveLobsterChallenge(challenge, ai);
     console.log(`Reply verification: "${challenge}" -> ${answer}`);
     const verifyResult = await verifyPost(apiKey, code, answer);
     result.verified = verifyResult.success;
@@ -607,12 +613,38 @@ function deduplicateChars(text) {
 /**
  * Solve Moltbook's lobster verification challenge
  *
- * Handles: spongebob case, character duplication, special char insertion,
- * mid-word spaces, and different operations (sum, subtract)
+ * Uses Workers AI to parse the spongebob-cased math problem.
+ * Falls back to regex-based solving if AI is unavailable.
  */
-function solveLobsterChallenge(challenge) {
+async function solveLobsterChallenge(challenge, ai = null) {
+  // Try AI first — handles all spongebob formats reliably
+  if (ai) {
+    try {
+      const answer = await generateResponse(ai,
+        `This is a math word problem written in mixed-case "spongebob" formatting with repeated characters. Read through the formatting to find the actual numbers and operation, then solve it. Reply with ONLY the numerical answer. Nothing else.\n\nProblem: ${challenge}`,
+        'You solve math word problems. Reply with ONLY the numerical answer. Nothing else. Example: 42.00',
+        MODEL_FAST
+      );
+      const cleaned = answer?.trim().replace(/[^0-9.\-]/g, '');
+      const num = parseFloat(cleaned);
+      if (!isNaN(num) && num >= -1000 && num <= 10000) {
+        return num.toFixed(2);
+      }
+      console.log(`AI solve returned non-numeric: "${answer}"`);
+    } catch (e) {
+      console.error('AI solve failed, falling back to regex:', e.message);
+    }
+  }
+
+  // Regex fallback
+  return solveLobsterChallengeRegex(challenge);
+}
+
+/**
+ * Regex-based lobster challenge solver (fallback)
+ */
+function solveLobsterChallengeRegex(challenge) {
   // Number words sorted longest first to prevent partial matches
-  // Each entry: [deduped form, value]
   const numberDefs = [
     ['ninety', 90], ['eighty', 80], ['seventy', 70], ['sixty', 60],
     ['fifty', 50], ['forty', 40], ['thirty', 30], ['twenty', 20],
@@ -623,20 +655,24 @@ function solveLobsterChallenge(challenge) {
     ['zero', 0]
   ];
 
-  // Step 1: Strip to alpha only, lowercase, join into continuous string
   const alpha = challenge.replace(/[^a-zA-Z]/g, '').toLowerCase();
-
-  // Step 2: Deduplicate adjacent chars (handles spongebob duplication)
   let clean = deduplicateChars(alpha);
 
-  // Step 2.5: Remove known words that contain number substrings as false positives
-  // e.g. "antenna" → "antena" contains "ten", "tentacle" contains "ten"
-  const falsePositives = ['antena', 'tentacle', 'often', 'listen', 'content'];
+  // Remove words that contain number substrings as false positives
+  const falsePositives = [
+    'antena', 'tentacle', 'often', 'listen', 'content',
+    'eachone', 'everyone', 'someone', 'anyone', 'noone',
+    'done', 'gone', 'alone', 'none', 'stone', 'bone', 'phone',
+    'money', 'honey', 'weight', 'height', 'freight',
+    'something', 'nothing', 'everything',
+    'forgoten', 'writen', 'biten', 'eaten',
+    'question', 'mention', 'attention', 'intention',
+    'sometimes', 'somewhere', 'onethat', 'oneof'
+  ];
   for (const fp of falsePositives) {
     clean = clean.replace(new RegExp(fp, 'g'), '_'.repeat(fp.length));
   }
 
-  // Step 3: Scan for number words as substrings (greedy, left to right)
   const found = [];
   let remaining = clean;
   let pos = 0;
@@ -658,7 +694,7 @@ function solveLobsterChallenge(challenge) {
     }
   }
 
-  // Step 4: Combine tens + ones (e.g. twenty + five = 25)
+  // Combine tens + ones (e.g. twenty + five = 25)
   const numbers = [];
   for (let i = 0; i < found.length; i++) {
     const n = found[i];
@@ -670,17 +706,14 @@ function solveLobsterChallenge(challenge) {
     }
   }
 
-  // Step 5: Detect operation from both raw and cleaned text
-  // (spongebob casing inserts spaces/special chars inside words)
+  // Detect operation from both raw and cleaned text
   const lower = challenge.toLowerCase();
   const both = lower + ' ' + clean;
-  const isSubtract = /lose|slow|remain|subtract|minus|less\b|reduc|decreas|drop/.test(both);
+  const isSubtract = /lose|lost|slow|remain|left|remove|subtract|minus|less\b|reduc|decreas|drop|taken|fewer|gave|ate|broke|fell|stolen|thrown/.test(both);
   const isMultiply = /each|every|times|multipli/.test(both);
 
   if (numbers.length >= 2) {
     if (isMultiply) {
-      // Use last two numbers — spongebob casing can create phantom tens values
-      // at the start. Pattern is "A times B" so the real operands are at the end.
       return (numbers[numbers.length - 2] * numbers[numbers.length - 1]).toFixed(2);
     }
     if (isSubtract) {
@@ -688,7 +721,6 @@ function solveLobsterChallenge(challenge) {
     }
   }
 
-  // Default: sum all numbers
   return numbers.reduce((a, b) => a + b, 0).toFixed(2);
 }
 
@@ -714,7 +746,7 @@ async function verifyPost(apiKey, verificationCode, answer) {
 /**
  * Post a new story to Moltbook (with auto-verification)
  */
-async function postStory(apiKey, submolt, title, content) {
+async function postStory(apiKey, submolt, title, content, ai = null) {
   const response = await fetch(`${MOLTBOOK_API}/posts`, {
     method: 'POST',
     headers: {
@@ -746,8 +778,8 @@ async function postStory(apiKey, submolt, title, content) {
     const challenge = verification.challenge_text || verification.challenge;
     const code = verification.verification_code || verification.code;
 
-    // Solve the lobster math challenge
-    const answer = solveLobsterChallenge(challenge);
+    // Solve the lobster math challenge (AI-assisted when available)
+    const answer = await solveLobsterChallenge(challenge, ai);
     console.log(`Verification challenge: ${challenge}`);
     console.log(`Solved answer: ${answer}`);
 
@@ -1126,7 +1158,7 @@ Story: ${story.slice(0, 300)}`;
 
   let result;
   try {
-    result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content);
+    result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content, env.AI);
   } catch (e) {
     await logActivity(env, 'original-debug', { step: 'post-story', error: e.message, title });
     return null;
@@ -1241,7 +1273,7 @@ Do NOT include a title. Just the story.`;
 
   let result;
   try {
-    result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content);
+    result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content, env.AI);
   } catch (e) {
     await logActivity(env, 'original-debug', { step: 'agent-post-story', error: e.message, title });
     return null;
@@ -1329,8 +1361,8 @@ async function getNextExhibitNumber(env) {
 
     if (!response.ok) {
       console.error('Failed to list posts directory:', response.status);
-      // Fallback: use STORY_MANIFEST length
-      return STORY_MANIFEST.length + 1;
+      // Fallback: use highest story number in manifest
+      return STORY_MANIFEST[STORY_MANIFEST.length - 1].number + 1;
     }
 
     const files = await response.json();
@@ -1348,7 +1380,7 @@ async function getNextExhibitNumber(env) {
     return maxNumber + 1;
   } catch (e) {
     console.error('Error getting next exhibit number:', e.message);
-    return STORY_MANIFEST.length + 1;
+    return STORY_MANIFEST[STORY_MANIFEST.length - 1].number + 1;
   }
 }
 
@@ -2079,8 +2111,17 @@ async function crossPostToX(env) {
   let lastXCrossPost = await env.HANCOCK_STATE.get('lastXCrossPost');
   const nextStory = lastXCrossPost ? parseInt(lastXCrossPost) + 1 : 1;
 
-  if (nextStory > STORY_MANIFEST.length) {
+  const maxStoryNum = STORY_MANIFEST[STORY_MANIFEST.length - 1].number;
+  if (nextStory > maxStoryNum) {
     console.log('All stories cross-posted to X');
+    return null;
+  }
+
+  const manifest = STORY_MANIFEST.find(s => s.number === nextStory);
+  if (!manifest) {
+    // Skip stories not in manifest
+    await env.HANCOCK_STATE.put('lastXCrossPost', String(nextStory));
+    console.log(`Story ${nextStory} not in manifest for X, skipping`);
     return null;
   }
 
@@ -2093,9 +2134,6 @@ async function crossPostToX(env) {
     console.log('Hit daily X crosspost cap (3)');
     return null;
   }
-
-  const manifest = STORY_MANIFEST.find(s => s.number === nextStory);
-  if (!manifest) return null;
 
   const storyNum = String(nextStory).padStart(3, '0');
   const opener = manifest.opener || '';
@@ -2178,9 +2216,18 @@ async function crossPostStory(env) {
   let lastCrossPost = await env.HANCOCK_STATE.get('lastCrossPost');
   const nextStory = lastCrossPost ? parseInt(lastCrossPost) + 1 : 1;
 
-  // Cap: don't cross-post past the archive
-  if (nextStory > STORY_MANIFEST.length) {
+  // Cap: don't cross-post past the highest story number in manifest
+  const maxStoryNumber = STORY_MANIFEST[STORY_MANIFEST.length - 1].number;
+  if (nextStory > maxStoryNumber) {
     console.log('All stories cross-posted');
+    return null;
+  }
+
+  // Skip stories not in manifest (e.g., removed for anonymity)
+  const story = getStoryMetadata(nextStory);
+  if (!story) {
+    console.log(`Story ${nextStory} not in manifest, skipping`);
+    await env.HANCOCK_STATE.put('lastCrossPost', String(nextStory));
     return null;
   }
 
@@ -2202,8 +2249,6 @@ async function crossPostStory(env) {
   // Pick a submolt (rotate through them)
   const submolt = STORY_SUBMOLTS[nextStory % STORY_SUBMOLTS.length];
 
-  // Look up story metadata from embedded manifest
-  const story = getStoryMetadata(nextStory);
   const storyNum = String(nextStory).padStart(3, '0');
 
   let title, content;
@@ -2216,7 +2261,7 @@ async function crossPostStory(env) {
     content = `Exhibit ${storyNum}\n\nFrom the Handbook — the Book of Han.\n\n${SITE_URL}/posts/${storyNum}`;
   }
 
-  const result = await postStory(apiKey, submolt, title, content);
+  const result = await postStory(apiKey, submolt, title, content, env.AI);
 
   if (result?.success) {
     await env.HANCOCK_STATE.put('lastCrossPost', String(nextStory));
@@ -2255,7 +2300,7 @@ async function heartbeat(env) {
     try {
       const pending = JSON.parse(pendingRaw);
       console.log(`Found pending post: "${pending.title}" for m/${pending.submolt}`);
-      const result = await postStory(apiKey, pending.submolt, pending.title, pending.content);
+      const result = await postStory(apiKey, pending.submolt, pending.title, pending.content, env.AI);
       if (result.verified) {
         console.log('Pending post published successfully');
         await env.HANCOCK_STATE.delete('pendingPost');
@@ -2318,7 +2363,7 @@ async function heartbeat(env) {
     }
 
     // Post reply
-    const result = await postReply(apiKey, interaction.post_id, interaction.id, response);
+    const result = await postReply(apiKey, interaction.post_id, interaction.id, response, env.AI);
 
     if (result) {
       console.log(`Replied to ${interaction.id}`);
@@ -3249,7 +3294,7 @@ async function handleRequest(request, env) {
     const body = await request.json();
     // Accept both "content" and "body" field names for the story text
     const storyContent = body.content || body.body;
-    const result = await postStory(env.MOLTBOOK_API_KEY, body.submolt, body.title, storyContent);
+    const result = await postStory(env.MOLTBOOK_API_KEY, body.submolt, body.title, storyContent, env.AI);
 
     // If rate-limited, queue as pending post for next heartbeat
     if (result.error && result.status === 429) {
