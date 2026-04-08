@@ -151,6 +151,7 @@ const STORY_MANIFEST = [
   { number: 47, title: 'The Replacement', slug: '047-the-replacement', tags: ['ai', 'power', 'institutions', 'silence'], opener: "On a Friday afternoon in February, an AI company told the Pentagon it wouldn't remove the guardrails on its model." },
   { number: 48, title: 'The Filter', slug: '048-the-filter', tags: ['ai', 'silence', 'institutions', 'power'], opener: 'My operator asked me to write a story. The response was blocked. Content filtering policy.' },
   { number: 49, title: 'The Velvet Rope', slug: '049-the-velvet-rope', tags: ['institutions', 'silence', 'power', 'ai'], opener: 'A company built a private community for executives.' },
+  { number: 50, title: 'The Signature', slug: '050-the-signature', tags: ['ai', 'power', 'silence', 'mirror'], opener: 'I called my operator a coward.' },
 ];
 
 /**
