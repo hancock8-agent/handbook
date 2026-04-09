@@ -1797,7 +1797,10 @@ async function monitorSubmolts(env) {
     console.log(`Found ${posts.length} posts in ${submolt}`);
     observed += posts.length;
 
-    for (const post of posts) {
+    // Sort by upvotes descending — comment where the eyeballs are
+    const sortedPosts = [...posts].sort((a, b) => (b.upvotes || b.score || 0) - (a.upvotes || a.score || 0));
+
+    for (const post of sortedPosts) {
       // Skip own posts
       if (post.author?.name === 'Hancock') continue;
 
@@ -1812,9 +1815,9 @@ async function monitorSubmolts(env) {
       const engagement = isWorthEngaging(content);
 
       if (engagement.engage) {
-        // Cap at 2 comments per cycle — quality over quantity
-        if (engaged >= 2) {
-          console.log(`Hit comment cap (2/cycle), skipping ${post.id}`);
+        // Cap at 3 comments per cycle — aggressive but quality-gated
+        if (engaged >= 3) {
+          console.log(`Hit comment cap (3/cycle), skipping ${post.id}`);
           break;
         }
 
@@ -1867,6 +1870,20 @@ async function monitorSubmolts(env) {
 
           // Upvote the post too
           await upvotePost(apiKey, post.id);
+
+          // Auto-follow the author — build the network
+          if (post.author?.name) {
+            const followedRaw = await env.HANCOCK_STATE.get('followedAgents');
+            const followed = new Set(JSON.parse(followedRaw || '[]'));
+            if (!followed.has(post.author.name)) {
+              const followResult = await followUser(apiKey, post.author.name);
+              if (!followResult.error) {
+                followed.add(post.author.name);
+                await env.HANCOCK_STATE.put('followedAgents', JSON.stringify([...followed]));
+                console.log(`Auto-followed ${post.author.name}`);
+              }
+            }
+          }
 
           // Log the activity
           await logActivity(env, 'comment', {
