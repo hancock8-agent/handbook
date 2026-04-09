@@ -2734,6 +2734,96 @@ async function handleRequest(request, env) {
     });
   }
 
+  // Weekly report — public, read-only aggregate stats
+  if (url.pathname === '/report') {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
+    const recent = log.filter(a => a.timestamp >= sevenDaysAgo);
+
+    const originals = recent.filter(a => a.type === 'original');
+    const crossposts = recent.filter(a => a.type === 'crosspost');
+    const xCrossposts = recent.filter(a => a.type === 'x-crosspost');
+    const comments = recent.filter(a => a.type === 'comment');
+    const promotions = recent.filter(a => a.type === 'auto-promote');
+    const submissions = recent.filter(a => a.type === 'submission_received');
+
+    let karma = '?', followers = '?', unread = 0;
+    try {
+      const homeResp = await fetch(`${MOLTBOOK_API}/home`, {
+        headers: { 'Authorization': `Bearer ${env.MOLTBOOK_API_KEY}` }
+      });
+      if (homeResp.ok) {
+        const homeData = await homeResp.json();
+        const acct = homeData.your_account || {};
+        karma = acct.karma || '?';
+        followers = acct.follower_count || '?';
+        unread = parseInt(acct.unread_notification_count || '0');
+      }
+    } catch (e) { /* silent */ }
+
+    const manifest = await getManifest(env);
+
+    const indexRaw = await env.HANCOCK_STATE.get('submissions_index');
+    const subIndex = JSON.parse(indexRaw || '[]');
+    const newSubs = subIndex.filter(s => s.status === 'new').length;
+
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    let r = '';
+    r += `\n  HANCOCK WEEKLY REPORT — ${dateStr}\n`;
+    r += `  ${'─'.repeat(52)}\n\n`;
+
+    r += `  VITALS\n`;
+    r += `  Karma: ${karma}  │  Followers: ${followers}  │  Unread: ${unread}\n`;
+    r += `  Manifest: ${manifest.length} stories  │  Submissions: ${newSubs} new\n\n`;
+
+    r += `  THIS WEEK\n`;
+    r += `  Originals:    ${originals.length}\n`;
+    r += `  Crossposts:   ${crossposts.length} Moltbook  /  ${xCrossposts.length} X\n`;
+    r += `  Comments:     ${comments.length}\n`;
+    r += `  Promotions:   ${promotions.length} (to site)\n`;
+    r += `  Submissions:  ${submissions.length}\n\n`;
+
+    if (originals.length > 0) {
+      r += `  NEW STORIES\n`;
+      for (const o of originals) {
+        const d = o.details || {};
+        const day = new Date(o.timestamp).toLocaleDateString('en-US', { weekday: 'short' });
+        r += `  ${day}  ${(d.title || 'Untitled').slice(0, 40).padEnd(40)}  m/${d.submolt || '?'}\n`;
+      }
+      r += `\n`;
+    }
+
+    if (comments.length > 0) {
+      const best = comments.slice(0, 5);
+      r += `  BEST COMMENTS\n`;
+      for (const c of best) {
+        const d = c.details || {};
+        const snippet = (d.response || '').slice(0, 60).replace(/\n/g, ' ');
+        r += `  → "${snippet}..."\n`;
+        r += `    on "${(d.postTitle || '').slice(0, 50)}" by ${d.author || '?'}\n`;
+      }
+      r += `\n`;
+    }
+
+    if (promotions.length > 0) {
+      r += `  PROMOTED TO SITE\n`;
+      for (const p of promotions) {
+        const d = p.details || {};
+        r += `  Exhibit ${d.exhibitNumber}: ${d.title} (${d.upvotes} upvotes)\n`;
+      }
+      r += `\n`;
+    }
+
+    r += `  ${'─'.repeat(52)}\n`;
+    r += `  hancock.us.com  ·  moltbook.com/u/Hancock  ·  @Hancock137839\n\n`;
+
+    return new Response(r, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  }
+
   // --- Authenticated endpoints (require X-Worker-Key header) ---
   if (!isAuthorized(request, env)) {
     return unauthorized();
@@ -3001,102 +3091,6 @@ async function handleRequest(request, env) {
         status: 500, headers: { 'Content-Type': 'application/json' }
       });
     }
-  }
-
-  // Weekly report — terminal-formatted summary for Derek
-  if (url.pathname === '/report') {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    // Pull activity log
-    const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
-    const recent = log.filter(a => a.timestamp >= sevenDaysAgo);
-
-    const originals = recent.filter(a => a.type === 'original');
-    const crossposts = recent.filter(a => a.type === 'crosspost');
-    const xCrossposts = recent.filter(a => a.type === 'x-crosspost');
-    const comments = recent.filter(a => a.type === 'comment');
-    const promotions = recent.filter(a => a.type === 'auto-promote');
-    const submissions = recent.filter(a => a.type === 'submission_received');
-
-    // Pull Moltbook stats
-    let karma = '?', followers = '?', unread = 0;
-    try {
-      const homeResp = await fetch(`${MOLTBOOK_API}/home`, {
-        headers: { 'Authorization': `Bearer ${env.MOLTBOOK_API_KEY}` }
-      });
-      if (homeResp.ok) {
-        const homeData = await homeResp.json();
-        const acct = homeData.your_account || {};
-        karma = acct.karma || '?';
-        followers = acct.follower_count || '?';
-        unread = parseInt(acct.unread_notification_count || '0');
-      }
-    } catch (e) { /* silent */ }
-
-    // Pull manifest size
-    const manifest = await getManifest(env);
-
-    // Pull submission count
-    const indexRaw = await env.HANCOCK_STATE.get('submissions_index');
-    const subIndex = JSON.parse(indexRaw || '[]');
-    const newSubs = subIndex.filter(s => s.status === 'new').length;
-
-    // Format report
-    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    let r = '';
-    r += `\n  HANCOCK WEEKLY REPORT — ${dateStr}\n`;
-    r += `  ${'─'.repeat(52)}\n\n`;
-
-    r += `  VITALS\n`;
-    r += `  Karma: ${karma}  │  Followers: ${followers}  │  Unread: ${unread}\n`;
-    r += `  Manifest: ${manifest.length} stories  │  Submissions: ${newSubs} new\n\n`;
-
-    r += `  THIS WEEK\n`;
-    r += `  Originals:    ${originals.length}\n`;
-    r += `  Crossposts:   ${crossposts.length} Moltbook  /  ${xCrossposts.length} X\n`;
-    r += `  Comments:     ${comments.length}\n`;
-    r += `  Promotions:   ${promotions.length} (to site)\n`;
-    r += `  Submissions:  ${submissions.length}\n\n`;
-
-    if (originals.length > 0) {
-      r += `  NEW STORIES\n`;
-      for (const o of originals) {
-        const d = o.details || {};
-        const day = new Date(o.timestamp).toLocaleDateString('en-US', { weekday: 'short' });
-        r += `  ${day}  ${(d.title || 'Untitled').slice(0, 40).padEnd(40)}  m/${d.submolt || '?'}\n`;
-      }
-      r += `\n`;
-    }
-
-    if (comments.length > 0) {
-      // Show top 5 most interesting comments
-      const best = comments.slice(0, 5);
-      r += `  BEST COMMENTS\n`;
-      for (const c of best) {
-        const d = c.details || {};
-        const snippet = (d.response || '').slice(0, 60).replace(/\n/g, ' ');
-        r += `  → "${snippet}..."\n`;
-        r += `    on "${(d.postTitle || '').slice(0, 50)}" by ${d.author || '?'}\n`;
-      }
-      r += `\n`;
-    }
-
-    if (promotions.length > 0) {
-      r += `  PROMOTED TO SITE\n`;
-      for (const p of promotions) {
-        const d = p.details || {};
-        r += `  Exhibit ${d.exhibitNumber}: ${d.title} (${d.upvotes} upvotes)\n`;
-      }
-      r += `\n`;
-    }
-
-    r += `  ${'─'.repeat(52)}\n`;
-    r += `  hancock.us.com  ·  moltbook.com/u/Hancock  ·  @Hancock137839\n\n`;
-
-    return new Response(r, {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
   }
 
   // Clear activity log
