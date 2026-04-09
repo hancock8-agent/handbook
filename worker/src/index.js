@@ -2421,20 +2421,6 @@ async function heartbeat(env) {
   // Auto-promote best Moltbook originals to the site (1 per day max)
   const promoted = await autoPromoteToSite(env);
 
-  // Keepalive ping to Supabase (prevents free-tier pause from inactivity)
-  if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
-    try {
-      await fetch(`${env.SUPABASE_URL}/rest/v1/hancock_submissions?select=id&limit=1`, {
-        headers: {
-          'apikey': env.SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
-        }
-      });
-    } catch (e) {
-      console.log('Supabase keepalive failed:', e.message);
-    }
-  }
-
   return {
     status: 'complete',
     checked: interactions.length,
@@ -2450,6 +2436,7 @@ async function heartbeat(env) {
 
 /**
  * Handle /submit endpoint (public — accepts stories from hancock.us.com)
+ * Stores in KV — no Supabase dependency.
  */
 async function handleSubmit(request, env) {
   const corsHeaders = {
@@ -2489,36 +2476,32 @@ async function handleSubmit(request, env) {
 
     const storyType = classifySubmission(story);
 
-    const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_ANON_KEY;
+    // Store in KV — no external dependency
+    const id = crypto.randomUUID();
+    const submission = {
+      id,
+      story,
+      contact_email: body.email?.trim() || null,
+      status: 'new',
+      notes: null,
+      type: storyType,
+      created_at: new Date().toISOString()
+    };
+    await env.HANCOCK_STATE.put(`submission:${id}`, JSON.stringify(submission));
 
-    const dbResponse = await fetch(`${supabaseUrl}/rest/v1/hancock_submissions`, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
-        story: story,
-        contact_email: body.email?.trim() || null
-      })
-    });
-
-    if (!dbResponse.ok) {
-      const errorText = await dbResponse.text();
-      console.error('Supabase insert failed:', dbResponse.status, errorText);
-      return new Response(JSON.stringify({ error: 'Failed to save' }), {
-        status: 500,
-        headers: corsHeaders
-      });
-    }
+    // Update submissions index
+    const indexRaw = await env.HANCOCK_STATE.get('submissions_index');
+    const index = JSON.parse(indexRaw || '[]');
+    index.unshift({ id, created_at: submission.created_at, status: 'new' });
+    // Keep last 500 submissions in index
+    if (index.length > 500) index.length = 500;
+    await env.HANCOCK_STATE.put('submissions_index', JSON.stringify(index));
 
     // Set rate limit (10 minute cooldown)
     await env.HANCOCK_STATE.put(rateLimitKey, '1', { expirationTtl: 600 });
 
     await logActivity(env, 'submission_received', {
+      id,
       hasEmail: !!body.email,
       storyLength: story.length,
       type: storyType
@@ -2997,69 +2980,37 @@ async function handleRequest(request, env) {
     });
   }
 
-  // View submissions from Supabase
+  // View submissions from KV
   if (url.pathname === '/submissions') {
     try {
-      const supabaseUrl = env.SUPABASE_URL;
-      const supabaseKey = env.SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseKey) {
-        return new Response(JSON.stringify({
-          error: 'Supabase not configured',
-          submissions: [], count: 0
-        }), { status: 503, headers: { 'Content-Type': 'application/json' } });
-      }
-
-      const status = url.searchParams.get('status');
+      const statusFilter = url.searchParams.get('status');
       const limit = parseInt(url.searchParams.get('limit') || '20');
 
-      let queryUrl = `${supabaseUrl}/rest/v1/hancock_submissions?order=created_at.desc&limit=${limit}`;
-      if (status) {
-        queryUrl += `&status=eq.${status}`;
+      const indexRaw = await env.HANCOCK_STATE.get('submissions_index');
+      const index = JSON.parse(indexRaw || '[]');
+
+      // Fetch full submission data for each entry
+      const submissions = [];
+      for (const entry of index) {
+        if (submissions.length >= limit) break;
+        if (statusFilter && entry.status !== statusFilter) continue;
+        const sub = await env.HANCOCK_STATE.get(`submission:${entry.id}`);
+        if (sub) submissions.push(JSON.parse(sub));
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(queryUrl,
-        {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          },
-          signal: controller.signal
-        }
-      );
-      clearTimeout(timeout);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        const isPaused = errorText.includes('1016') || errorText.includes('DNS') || response.status === 502 || response.status === 521 || response.status === 522;
-        return new Response(JSON.stringify({
-          error: isPaused ? 'Supabase project paused — restore at supabase.com (hancock8@proton.me)' : 'Failed to fetch submissions',
-          details: errorText,
-          submissions: [], count: 0
-        }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      const submissions = await response.json();
       return new Response(JSON.stringify({
         submissions,
         count: submissions.length,
-        filter: status || 'all'
+        filter: statusFilter || 'all'
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (e) {
       return new Response(JSON.stringify({
-        error: 'Supabase project appears paused — restore at supabase.com (hancock8@proton.me)',
+        error: e.message,
         submissions: [], count: 0
       }), {
-        status: 503,
+        status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -3072,35 +3023,30 @@ async function handleRequest(request, env) {
       const body = await request.json();
       const { status, notes } = body;
 
-      const supabaseUrl = env.SUPABASE_URL;
-      const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
-
-      const updateData = {};
-      if (status) updateData.status = status;
-      if (notes) updateData.notes = notes;
-      if (status === 'used' || status === 'reviewed') updateData.read_at = new Date().toISOString();
-
-      const response = await fetch(`${supabaseUrl}/rest/v1/hancock_submissions?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(updateData)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return new Response(JSON.stringify({ error: 'Failed to update', details: errorText }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
+      const subRaw = await env.HANCOCK_STATE.get(`submission:${id}`);
+      if (!subRaw) {
+        return new Response(JSON.stringify({ error: 'Submission not found' }), {
+          status: 404, headers: { 'Content-Type': 'application/json' }
         });
       }
 
-      const updated = await response.json();
-      return new Response(JSON.stringify({ success: true, submission: updated[0] }), {
+      const submission = JSON.parse(subRaw);
+      if (status) submission.status = status;
+      if (notes) submission.notes = notes;
+      if (status === 'used' || status === 'reviewed') submission.read_at = new Date().toISOString();
+
+      await env.HANCOCK_STATE.put(`submission:${id}`, JSON.stringify(submission));
+
+      // Update index entry status too
+      const indexRaw = await env.HANCOCK_STATE.get('submissions_index');
+      const index = JSON.parse(indexRaw || '[]');
+      const entry = index.find(e => e.id === id);
+      if (entry && status) {
+        entry.status = status;
+        await env.HANCOCK_STATE.put('submissions_index', JSON.stringify(index));
+      }
+
+      return new Response(JSON.stringify({ success: true, submission }), {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (e) {
