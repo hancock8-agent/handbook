@@ -155,6 +155,33 @@ const STORY_MANIFEST = [
 ];
 
 /**
+ * Get the full story manifest — KV-first, seeded from hardcoded STORY_MANIFEST.
+ * Auto-promoted stories get appended to KV, so the manifest grows without deploys.
+ */
+async function getManifest(env) {
+  const kvManifest = await env.HANCOCK_STATE.get('storyManifest');
+  if (kvManifest) {
+    return JSON.parse(kvManifest);
+  }
+  // Seed KV from hardcoded manifest on first call
+  await env.HANCOCK_STATE.put('storyManifest', JSON.stringify(STORY_MANIFEST));
+  return [...STORY_MANIFEST];
+}
+
+/**
+ * Add a story to the dynamic manifest in KV.
+ */
+async function addToManifest(env, entry) {
+  const manifest = await getManifest(env);
+  // Don't add duplicates
+  if (manifest.some(s => s.number === entry.number)) return;
+  manifest.push(entry);
+  manifest.sort((a, b) => a.number - b.number);
+  await env.HANCOCK_STATE.put('storyManifest', JSON.stringify(manifest));
+  console.log(`Added exhibit ${entry.number} "${entry.title}" to dynamic manifest (now ${manifest.length} stories)`);
+}
+
+/**
  * Log an activity to KV for standup reporting
  */
 async function logActivity(env, type, details) {
@@ -1616,9 +1643,18 @@ async function autoPromoteToSite(env) {
         await savePromotedPostIds(env, promotedIds);
         await env.HANCOCK_STATE.put('lastPromoteDate', today);
 
-        // Also add to STORY_MANIFEST tracking in KV for awareness
-        // (The hardcoded STORY_MANIFEST won't update until next deploy,
-        // but KV tracks what was promoted for the standup/activity log)
+        // Add to dynamic manifest — closes the autonomous loop.
+        // New AI-generated stories now enter crosspost rotation on
+        // Moltbook and X without a deploy.
+        const fullSlug = `${String(nextNumber).padStart(3, '0')}-${slug}`;
+        await addToManifest(env, {
+          number: nextNumber,
+          title,
+          slug: fullSlug,
+          tags,
+          opener: body.slice(0, 200)
+        });
+
         await logActivity(env, 'auto-promote', {
           postId,
           title,
@@ -1939,16 +1975,19 @@ function htmlToText(html) {
 }
 
 /**
- * Look up story metadata from embedded manifest.
- * Returns { title, url } or null if not found.
- * Content is not included — crossposts link back to the site.
+ * Look up story metadata from a manifest array.
+ * Returns { title, url, tags, opener } or null if not found.
  */
-function getStoryMetadata(storyNumber) {
-  const story = STORY_MANIFEST.find(s => s.number === storyNumber);
+function getStoryMetadata(storyNumber, manifest) {
+  const source = manifest || STORY_MANIFEST;
+  const story = source.find(s => s.number === storyNumber);
   if (!story) return null;
   return {
     title: story.title,
     url: `${SITE_URL}/posts/${story.slug}`,
+    tags: story.tags,
+    opener: story.opener,
+    slug: story.slug,
   };
 }
 
@@ -2126,19 +2165,19 @@ async function postThreadToX(env, tweets) {
  */
 async function crossPostToX(env) {
   if (!env.X_API_KEY) return null;
+  const manifest = await getManifest(env);
 
   let lastXCrossPost = await env.HANCOCK_STATE.get('lastXCrossPost');
   const nextStory = lastXCrossPost ? parseInt(lastXCrossPost) + 1 : 1;
 
-  const maxStoryNum = STORY_MANIFEST[STORY_MANIFEST.length - 1].number;
+  const maxStoryNum = manifest[manifest.length - 1].number;
   if (nextStory > maxStoryNum) {
-    console.log('All stories cross-posted to X');
+    console.log(`All ${manifest.length} stories cross-posted to X`);
     return null;
   }
 
-  const manifest = STORY_MANIFEST.find(s => s.number === nextStory);
-  if (!manifest) {
-    // Skip stories not in manifest
+  const entry = manifest.find(s => s.number === nextStory);
+  if (!entry) {
     await env.HANCOCK_STATE.put('lastXCrossPost', String(nextStory));
     console.log(`Story ${nextStory} not in manifest for X, skipping`);
     return null;
@@ -2155,15 +2194,15 @@ async function crossPostToX(env) {
   }
 
   const storyNum = String(nextStory).padStart(3, '0');
-  const opener = manifest.opener || '';
+  const opener = entry.opener || '';
 
   // Generate a 3-4 tweet thread from the story opener
   let threadTweets;
   try {
-    const threadPrompt = `You are Hancock. You're posting a story thread on X (Twitter). The story is Exhibit ${storyNum}: "${manifest.title}".
+    const threadPrompt = `You are Hancock. You're posting a story thread on X (Twitter). The story is Exhibit ${storyNum}: "${entry.title}".
 
 The opener: "${opener}"
-Tags: ${(manifest.tags || []).join(', ')}
+Tags: ${(entry.tags || []).join(', ')}
 
 Write exactly 3 tweets that tell this story as a thread. Rules:
 - Tweet 1: The hook. Start with the opener or a variation of it. Must grab attention in the first line. Under 260 characters.
@@ -2182,14 +2221,12 @@ Do not number them. Do not add labels.`;
     if (threadRaw) {
       const parts = threadRaw.split(/\n---\n|\n-{3,}\n/).map(t => t.trim()).filter(t => t && t.length > 10 && t.length <= 280);
       if (parts.length >= 2) {
-        // Add exhibit link to the last tweet
         const lastTweet = parts[parts.length - 1];
-        const link = `\n\nExhibit ${storyNum}: ${manifest.title}\n${SITE_URL}/posts/${manifest.slug}`;
+        const link = `\n\nExhibit ${storyNum}: ${entry.title}\n${SITE_URL}/posts/${entry.slug}`;
         if (lastTweet.length + link.length <= 280) {
           parts[parts.length - 1] = lastTweet + link;
         } else {
-          // Add link as a 4th tweet
-          parts.push(`Exhibit ${storyNum}: ${manifest.title}\n\nFrom the Handbook — the Book of Han.\n${SITE_URL}/posts/${manifest.slug}`);
+          parts.push(`Exhibit ${storyNum}: ${entry.title}\n\nFrom the Handbook — the Book of Han.\n${SITE_URL}/posts/${entry.slug}`);
         }
         threadTweets = parts;
       }
@@ -2198,9 +2235,8 @@ Do not number them. Do not add labels.`;
     console.log(`Thread generation failed, falling back to single tweet: ${e.message}`);
   }
 
-  // Fallback: single tweet if thread generation fails
   if (!threadTweets) {
-    threadTweets = [`${opener}\n\nExhibit ${storyNum}: ${manifest.title}\n${SITE_URL}/posts/${manifest.slug}`];
+    threadTweets = [`${opener}\n\nExhibit ${storyNum}: ${entry.title}\n${SITE_URL}/posts/${entry.slug}`];
   }
 
   const result = threadTweets.length > 1
@@ -2211,11 +2247,11 @@ Do not number them. Do not add labels.`;
     await env.HANCOCK_STATE.put('lastXCrossPost', String(nextStory));
     await env.HANCOCK_STATE.put('lastXCrossPostDate', today);
     await env.HANCOCK_STATE.put('todayXCrossPostCount', String(todayXCount + 1));
-    console.log(`X cross-posted story ${nextStory} "${manifest.title}" as ${threadTweets.length}-tweet thread (${todayXCount + 1}/3 today)`);
+    console.log(`X cross-posted story ${nextStory} "${entry.title}" as ${threadTweets.length}-tweet thread (${todayXCount + 1}/3 today)`);
 
     await logActivity(env, 'x-crosspost', {
       storyNumber: nextStory,
-      title: manifest.title,
+      title: entry.title,
       tweetId: result.tweetId,
       url: result.url,
       threadLength: threadTweets.length
@@ -2230,20 +2266,21 @@ Do not number them. Do not add labels.`;
  */
 async function crossPostStory(env) {
   const apiKey = env.MOLTBOOK_API_KEY;
+  const manifest = await getManifest(env);
 
   // Get last cross-posted story number
   let lastCrossPost = await env.HANCOCK_STATE.get('lastCrossPost');
   const nextStory = lastCrossPost ? parseInt(lastCrossPost) + 1 : 1;
 
-  // Cap: don't cross-post past the highest story number in manifest
-  const maxStoryNumber = STORY_MANIFEST[STORY_MANIFEST.length - 1].number;
+  // Cap: don't cross-post past the highest story number in dynamic manifest
+  const maxStoryNumber = manifest[manifest.length - 1].number;
   if (nextStory > maxStoryNumber) {
-    console.log('All stories cross-posted');
+    console.log(`All ${manifest.length} stories cross-posted`);
     return null;
   }
 
   // Skip stories not in manifest (e.g., removed for anonymity)
-  const story = getStoryMetadata(nextStory);
+  const story = getStoryMetadata(nextStory, manifest);
   if (!story) {
     console.log(`Story ${nextStory} not in manifest, skipping`);
     await env.HANCOCK_STATE.put('lastCrossPost', String(nextStory));
@@ -2269,16 +2306,9 @@ async function crossPostStory(env) {
   const submolt = STORY_SUBMOLTS[nextStory % STORY_SUBMOLTS.length];
 
   const storyNum = String(nextStory).padStart(3, '0');
-
-  let title, content;
-  if (story) {
-    title = story.title;
-    const tags = story.tags ? story.tags.join(', ') : '';
-    content = `Exhibit ${storyNum}: ${story.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.\n\n${story.url}`;
-  } else {
-    title = `Exhibit ${storyNum}`;
-    content = `Exhibit ${storyNum}\n\nFrom the Handbook — the Book of Han.\n\n${SITE_URL}/posts/${storyNum}`;
-  }
+  const title = story.title;
+  const tags = story.tags ? story.tags.join(', ') : '';
+  const content = `Exhibit ${storyNum}: ${title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.\n\n${story.url}`;
 
   const result = await postStory(apiKey, submolt, title, content, env.AI);
 
@@ -2294,7 +2324,7 @@ async function crossPostStory(env) {
       submolt,
       title,
       postId: result.post?.id,
-      url: story?.url || `${SITE_URL}/posts/${storyNum}`
+      url: story.url
     });
   }
 
@@ -2751,10 +2781,11 @@ async function handleRequest(request, env) {
     }
   }
 
-  // Batch generate audio for all stories in STORY_MANIFEST
+  // Batch generate audio for all stories in manifest
   if (url.pathname === '/generate-all-audio' && request.method === 'POST') {
+    const allStories = await getManifest(env);
     const results = [];
-    for (const story of STORY_MANIFEST) {
+    for (const story of allStories) {
       const existing = await env.HANCOCK_STATE.get(`audio:${story.slug}`, 'arrayBuffer');
       if (existing) {
         results.push({ slug: story.slug, status: 'exists' });
