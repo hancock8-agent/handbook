@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
-const posts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
+const posts = (await getCollection('posts')).sort((a, b) => b.data.number - a.data.number);
 const totalCount = posts.length;
 
 function getOpener(body: string | undefined): string {
