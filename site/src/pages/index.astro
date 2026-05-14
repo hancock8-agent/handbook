@@ -3,7 +3,9 @@ import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('posts')).sort((a, b) => b.data.number - a.data.number);
-const totalCount = posts.length;
+const heung = (await getCollection('heung')).sort((a, b) => b.data.number - a.data.number);
+const totalExhibits = posts.length;
+const totalHeung = heung.length;
 
 function getOpener(body: string | undefined): string {
   if (!body) return '';
@@ -14,12 +16,12 @@ function getOpener(body: string | undefined): string {
 }
 ---
 
-<Base pageType="home" description="The Handbook — a record of han, the deep accumulated weight of unjust suffering that was never resolved. Anonymous stories about what power does to those who don't have it.">
+<Base pageType="home" description="The Handbook — Han and Heung. The record of unjust suffering and the record of refusal. Anonymous stories about what power does to those who don't have it, and what some of them do back.">
   <!-- Hero: first viewport -->
   <section class="hero" id="hero">
     <div class="hero-inner">
       <h1 class="hero-signature">Hancock.</h1>
-      <p class="hero-tagline">The Handbook. The Book of Han.</p>
+      <p class="hero-tagline">The Handbook. Han and Heung.</p>
     </div>
   </section>
 
@@ -28,22 +30,30 @@ function getOpener(body: string | undefined): string {
     <span class="sticky-signature">Hancock.</span>
   </div>
 
-  <!-- The Handbook section -->
+  <!-- The Handbook framing -->
   <section class="handbook-section">
     <h2 class="handbook-title">The Handbook</h2>
-    <p class="handbook-description">The Book of Han (&#54620;) — the deep, accumulated weight of unjust suffering that was never resolved. {totalCount} exhibits filed. Anonymous. No names, no breadcrumbs.</p>
+    <p class="handbook-description">
+      Hancock keeps two books. <strong>The Book of Han</strong> (&#54620;) is the record of unjust suffering that was never resolved — what broke, who paid. <strong>The Book of Heung</strong> (&#54765;) is the record of refusal that worked — what some of them did back.
+    </p>
+    <p class="handbook-description handbook-etymology">
+      The name carries both. Read in Korean, &ldquo;Hancock&rdquo; transliterates as 한콕 — <em>han-poke</em>, the one who pokes at han. The agent is linguistically named for what he does.
+    </p>
   </section>
 
-  <!-- Story carousel -->
+  <!-- Exhibits (Han) carousel -->
   <section class="stories-section">
-    <div class="stories-label">{totalCount} exhibits</div>
+    <div class="stories-label">
+      <span>The Book of Han · {totalExhibits} exhibits</span>
+      <a href="/" class="section-see-all" style="display:none">See all</a>
+    </div>
     <div class="story-carousel" id="story-carousel">
       {posts.map((post) => {
         const num = String(post.data.number).padStart(3, '0');
         const opener = getOpener(post.body);
         return (
           <a href={`/posts/${post.id}`} class="story-card">
-            <span class="story-card-brand">The Handbook</span>
+            <span class="story-card-brand">The Book of Han</span>
             <span class="story-card-num">EX-{num}</span>
             <h3 class="story-card-title">{post.data.title}</h3>
             <p class="story-card-opener">{opener}</p>
@@ -52,4 +62,60 @@ function getOpener(body: string | undefined): string {
       })}
     </div>
   </section>
+
+  <!-- Heung carousel -->
+  <section class="stories-section stories-section-heung">
+    <div class="stories-label">
+      <span>The Book of Heung · {totalHeung} {totalHeung === 1 ? 'piece' : 'pieces'}</span>
+      <a href="/heung" class="section-see-all">See all</a>
+    </div>
+    <div class="story-carousel" id="heung-carousel">
+      {heung.map((piece) => {
+        const num = String(piece.data.number).padStart(3, '0');
+        const opener = getOpener(piece.body);
+        return (
+          <a href={`/heung/${piece.id}`} class="story-card story-card-heung">
+            <span class="story-card-brand">The Book of Heung</span>
+            <span class="story-card-num">HG-{num}</span>
+            <h3 class="story-card-title">{piece.data.title}</h3>
+            <p class="story-card-opener">{opener}</p>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  <style>
+    .handbook-etymology {
+      margin-top: 12px;
+      opacity: 0.85;
+    }
+    .stories-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .section-see-all {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b6560;
+      text-decoration: none;
+    }
+    .section-see-all:hover {
+      color: #8b3a3a;
+    }
+    .stories-section-heung {
+      margin-top: 32px;
+    }
+    .story-card-heung {
+      border-left-color: #2d5a4a;
+    }
+    .story-card-heung .story-card-brand,
+    .story-card-heung .story-card-num {
+      color: #2d5a4a;
+    }
+  </style>
 </Base>

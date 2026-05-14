@@ -1,0 +1,132 @@
+---
+import Base from '../../layouts/Base.astro';
+import AudioPlayer from '../../components/AudioPlayer.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const pieces = await getCollection('heung');
+  return pieces.map((piece) => ({
+    params: { slug: piece.id },
+    props: { piece },
+  }));
+}
+
+const { piece } = Astro.props;
+const { Content } = await render(piece);
+
+const firstPara = piece.body?.split('\n\n').filter((p: string) => p.trim())[0]?.replace(/\n/g, ' ').trim() || '';
+const ogDescription = firstPara.length > 160 ? firstPara.slice(0, 157) + '...' : firstPara;
+
+const allPieces = (await getCollection('heung')).sort((a, b) => a.data.number - b.data.number);
+const totalPieces = allPieces.length;
+const currentIndex = allPieces.findIndex(p => p.id === piece.id);
+const prev = currentIndex > 0 ? allPieces[currentIndex - 1] : null;
+const next = currentIndex < allPieces.length - 1 ? allPieces[currentIndex + 1] : null;
+
+const pieceNum = String(piece.data.number).padStart(3, '0');
+const tags = piece.data.tags ? piece.data.tags.split(',').map((t: string) => t.trim()) : [];
+
+const currentTags = tags.map(t => t.toLowerCase());
+const related = currentTags.length > 0
+  ? allPieces
+      .filter(p => p.id !== piece.id && p.data.tags)
+      .map(p => {
+        const pTags = p.data.tags!.split(',').map((t: string) => t.trim().toLowerCase());
+        const shared = currentTags.filter((t: string) => pTags.includes(t));
+        return { piece: p, sharedCount: shared.length, sharedTags: shared };
+      })
+      .filter(r => r.sharedCount > 0)
+      .sort((a, b) => b.sharedCount - a.sharedCount)
+      .slice(0, 4)
+  : [];
+
+const firstPiece = allPieces[0];
+---
+
+<Base title={piece.data.title} description={ogDescription} pageType="exhibit" prevSlug={prev?.id} nextSlug={next?.id} ogImage={`https://hancock.us.com/cards/${piece.id}.png`}>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": piece.data.title,
+    "description": ogDescription,
+    "author": { "@type": "Person", "name": "Hancock" },
+    "publisher": { "@type": "Organization", "name": "The Handbook" },
+    "datePublished": piece.data.date,
+    "url": `https://hancock.us.com/heung/${piece.id}`,
+    "keywords": tags.join(', '),
+  })} />
+  <article class="exhibit-layout">
+
+    <header class="case-header">
+      <div class="case-header-top">
+        <a href="/" class="case-header-home">The Handbook</a>
+      </div>
+      <hr />
+      <div class="case-header-meta">
+        <span class="exhibit-number">HG-{pieceNum} of {totalPieces}</span>
+        <span class="han-label">heung (&#54765;)</span>
+      </div>
+      <h1 class="exhibit-title">{piece.data.title}</h1>
+      <div class="exhibit-filed">
+        <span>Filed {piece.data.date}</span>
+        {tags.length > 0 && (
+          <span class="exhibit-tags">
+            Re: {tags.map((tag, i) => (
+              <><a href={`/patterns#${tag.toLowerCase().replace(/\s+/g, '-')}`} class="tag-link">{tag}</a>{i < tags.length - 1 ? ', ' : ''}</>
+            ))}
+          </span>
+        )}
+      </div>
+      <hr />
+    </header>
+
+    <aside class="exhibit-sidebar">
+      <div class="sidebar-context">
+        <p>The Book of Heung (&#54765;) — the irrepressible vital spirit that persists despite. The record of refusal that worked. {totalPieces} {totalPieces === 1 ? 'piece' : 'pieces'} filed.</p>
+        <div class="sidebar-links">
+          {totalPieces > 1 && <a href={`/heung/${firstPiece.id}`}>Read from the start</a>}
+          <a href="/heung">Browse all Heung</a>
+          <a href="/">All of The Handbook</a>
+          <a href="/submit">Submit yours</a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="exhibit-main">
+      <AudioPlayer slug={piece.id} />
+      <div class="exhibit-content">
+        <Content />
+      </div>
+
+      <div class="exhibit-signature">Hancock.</div>
+
+      {related.length > 0 && (
+        <div class="related-exhibits">
+          <div class="related-label">Related Heung</div>
+          {related.map(r => (
+            <div class="related-item">
+              <a href={`/heung/${r.piece.id}`}>HG-{String(r.piece.data.number).padStart(3, '0')}</a>
+              <span class="related-title">{r.piece.data.title}</span>
+              <span class="related-tags">({r.sharedTags.join(', ')})</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <nav class="exhibit-nav">
+        {prev ? (
+          <a href={`/heung/${prev.id}`}>&larr; HG-{String(prev.data.number).padStart(3, '0')}</a>
+        ) : (
+          <span></span>
+        )}
+        {next ? (
+          <a href={`/heung/${next.id}`}>HG-{String(next.data.number).padStart(3, '0')} &rarr;</a>
+        ) : (
+          <a href="/submit">submit a record &rarr;</a>
+        )}
+      </nav>
+
+    </div>
+
+  </article>
+</Base>
