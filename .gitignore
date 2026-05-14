@@ -29,6 +29,11 @@ CLAUDE.md
 HANDOFF.md
 SESSION_CLOSEOUT.md
 
+# Editorial pipeline (anonymity boundary — never push)
+posts/drafts/
+scripts/
+logs/
+
 # Legacy
 .netlify/
 videos/
