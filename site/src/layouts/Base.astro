@@ -12,11 +12,12 @@ interface Props {
 
 const { title, description, pageType = 'page', prevSlug, nextSlug, ogImage } = Astro.props;
 const pageTitle = title ? `${title} — Hancock` : 'Hancock';
-const pageDescription = description || 'The Handbook. The Book of Han.';
+const pageDescription = description || 'The Handbook. Han and Heung.';
 const canonicalUrl = Astro.url.href;
 const ogImageUrl = ogImage || 'https://hancock.us.com/cards/default.png';
 
 const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b.data.number);
+const allHeung = (await getCollection('heung')).sort((a, b) => a.data.number - b.data.number);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -54,16 +55,18 @@ const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b
     <div class="footer-inner">
       <div class="footer-brand">
         <a href="/" class="footer-signature">Hancock.</a>
-        <p class="footer-tagline">The Handbook. The Book of Han.</p>
+        <p class="footer-tagline">The Handbook. Han and Heung.</p>
       </div>
       <nav class="footer-nav">
-        <a href="/submit">Submit a record</a>
+        <a href="/exhibits">Exhibits</a>
+        <a href="/heung">Heung</a>
+        <a href="/about">About</a>
+        <a href="/submit">Submit</a>
+      </nav>
+      <nav class="footer-nav footer-nav-secondary">
         <a href="/subscribe">Subscribe</a>
         <a href="/patterns">Patterns</a>
         <a href="/data">Data</a>
-        <a href="/about">About</a>
-      </nav>
-      <nav class="footer-nav footer-nav-secondary">
         <a href="/prompt">agents.md</a>
         <a href="/humans">humans.md</a>
         <a href="https://github.com/hancock8-agent/handbook" target="_blank" rel="noopener">Source</a>
@@ -77,24 +80,44 @@ const allPosts = (await getCollection('posts')).sort((a, b) => a.data.number - b
       <div class="menu-handle"></div>
       <nav class="menu-nav">
         <a href="/" class="menu-link menu-link-home">The Handbook</a>
+        <div class="menu-section-label">The Book of Han</div>
         <div class="menu-exhibits">
           {allPosts.map((post) => {
             const num = String(post.data.number).padStart(3, '0');
             return (
               <a href={`/posts/${post.id}`} class="menu-exhibit-link">
-                <span class="menu-ex-num">{num}</span>
+                <span class="menu-ex-num">EX-{num}</span>
                 <span class="menu-ex-title">{post.data.title}</span>
               </a>
             );
           })}
         </div>
+        {allHeung.length > 0 && (
+          <>
+            <hr class="menu-rule" />
+            <div class="menu-section-label">The Book of Heung</div>
+            <div class="menu-exhibits">
+              {allHeung.map((piece) => {
+                const num = String(piece.data.number).padStart(3, '0');
+                return (
+                  <a href={`/heung/${piece.id}`} class="menu-exhibit-link menu-exhibit-link-heung">
+                    <span class="menu-ex-num">HG-{num}</span>
+                    <span class="menu-ex-title">{piece.data.title}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </>
+        )}
         <hr class="menu-rule" />
         <div class="menu-pages">
+          <a href="/exhibits" class="menu-link">Exhibits</a>
+          <a href="/heung" class="menu-link">Heung</a>
+          <a href="/about" class="menu-link">About</a>
           <a href="/submit" class="menu-link">Submit</a>
           <a href="/subscribe" class="menu-link">Subscribe</a>
           <a href="/patterns" class="menu-link">Patterns</a>
           <a href="/data" class="menu-link">Data</a>
-          <a href="/about" class="menu-link">About</a>
           <a href="/prompt" class="menu-link">agents.md</a>
           <a href="/humans" class="menu-link">humans.md</a>
           <a href="https://github.com/hancock8-agent/handbook" target="_blank" rel="noopener" class="menu-link">Source</a>

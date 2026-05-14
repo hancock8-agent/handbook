@@ -3,7 +3,7 @@ const { slug } = Astro.props;
 const audioUrl = `https://hancock-agent.bitter-sky-a8a5.workers.dev/media/audio/${slug}.mp3`;
 ---
 
-<div class="audio-player" data-audio-url={audioUrl}>
+<div class="audio-player" data-audio-url={audioUrl} data-audio-state="checking">
   <button class="audio-btn" aria-label="Listen to this exhibit">
     <svg class="audio-icon audio-icon-play" width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path d="M4 2.5v11l9-5.5L4 2.5z" fill="currentColor"/>
@@ -23,7 +23,13 @@ const audioUrl = `https://hancock-agent.bitter-sky-a8a5.workers.dev/media/audio/
 </div>
 
 <style>
-  .audio-player {
+  /* Hidden by default until HEAD check confirms audio exists.
+     Avoids the "Listen → click → Unavailable" broken-looking UX. */
+  .audio-player[data-audio-state="checking"],
+  .audio-player[data-audio-state="missing"] {
+    display: none !important;
+  }
+  .audio-player[data-audio-state="ready"] {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -82,20 +88,37 @@ const audioUrl = `https://hancock-agent.bitter-sky-a8a5.workers.dev/media/audio/
 </style>
 
 <script>
-  document.querySelectorAll('.audio-player').forEach(player => {
-    const btn = player.querySelector('.audio-btn');
-    const label = player.querySelector('.audio-label');
-    const playIcon = player.querySelector('.audio-icon-play');
-    const pauseIcon = player.querySelector('.audio-icon-pause');
-    const progress = player.querySelector('.audio-progress');
-    const fill = player.querySelector('.audio-fill');
-    const timeEl = player.querySelector('.audio-time');
-    const bar = player.querySelector('.audio-bar');
-    const url = player.dataset.audioUrl;
-    let audio = null;
-    let loaded = false;
+  document.querySelectorAll('.audio-player').forEach(async (player) => {
+    const el = player as HTMLElement;
+    const url = el.dataset.audioUrl!;
 
-    function formatTime(s) {
+    // Runtime HEAD check — hide the player if audio doesn't exist in KV.
+    // Decision 9 (2026-05-13): "Listen → click → Unavailable" reads broken,
+    // so we pre-check at page load instead of letting click discover 404.
+    try {
+      const resp = await fetch(url, { method: 'HEAD' });
+      if (!resp.ok) {
+        el.dataset.audioState = 'missing';
+        return;
+      }
+    } catch {
+      el.dataset.audioState = 'missing';
+      return;
+    }
+
+    el.dataset.audioState = 'ready';
+
+    const btn = player.querySelector('.audio-btn') as HTMLButtonElement;
+    const label = player.querySelector('.audio-label') as HTMLElement;
+    const playIcon = player.querySelector('.audio-icon-play') as HTMLElement;
+    const pauseIcon = player.querySelector('.audio-icon-pause') as HTMLElement;
+    const progress = player.querySelector('.audio-progress') as HTMLElement;
+    const fill = player.querySelector('.audio-fill') as HTMLElement;
+    const timeEl = player.querySelector('.audio-time') as HTMLElement;
+    const bar = player.querySelector('.audio-bar') as HTMLElement;
+    let audio: HTMLAudioElement | null = null;
+
+    function formatTime(s: number) {
       const m = Math.floor(s / 60);
       const sec = Math.floor(s % 60);
       return `${m}:${sec.toString().padStart(2, '0')}`;
@@ -105,9 +128,9 @@ const audioUrl = `https://hancock-agent.bitter-sky-a8a5.workers.dev/media/audio/
       if (!audio) {
         audio = new Audio(url);
         audio.addEventListener('timeupdate', () => {
-          if (audio.duration) {
-            fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
-            timeEl.textContent = formatTime(audio.currentTime);
+          if (audio!.duration) {
+            fill.style.width = (audio!.currentTime / audio!.duration * 100) + '%';
+            timeEl.textContent = formatTime(audio!.currentTime);
           }
         });
         audio.addEventListener('ended', () => {
@@ -136,7 +159,7 @@ const audioUrl = `https://hancock-agent.bitter-sky-a8a5.workers.dev/media/audio/
       }
     });
 
-    bar?.addEventListener('click', (e) => {
+    bar?.addEventListener('click', (e: MouseEvent) => {
       if (audio?.duration) {
         const rect = bar.getBoundingClientRect();
         const pct = (e.clientX - rect.left) / rect.width;

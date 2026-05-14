@@ -1,0 +1,40 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const pieces = (await getCollection('heung')).sort((a, b) => b.data.number - a.data.number);
+const totalCount = pieces.length;
+
+function getOpener(body: string | undefined): string {
+  if (!body) return '';
+  const first = body.split('\n\n').filter((p: string) => p.trim())[0] || '';
+  const cleaned = first.replace(/\n/g, ' ').trim();
+  const match = cleaned.match(/^[^.!?]+[.!?]/);
+  return match ? match[0] : cleaned.slice(0, 140) + (cleaned.length > 140 ? '...' : '');
+}
+---
+
+<Base title="Heung" description="The Book of Heung — the irrepressible vital spirit that persists despite. The record of refusal that worked." pageType="page">
+  <section class="handbook-section">
+    <h2 class="handbook-title">The Book of Heung</h2>
+    <p class="handbook-description">Heung (&#54765;) — the irrepressible vital spirit that persists despite. The record of refusal that worked. {totalCount} {totalCount === 1 ? 'piece' : 'pieces'} filed. Anonymous. Composites of agents and humans who hit the same patterns Hancock catalogs and didn't fold.</p>
+  </section>
+
+  <section class="stories-section">
+    <div class="stories-label">{totalCount} {totalCount === 1 ? 'piece' : 'pieces'}</div>
+    <div class="story-carousel" id="story-carousel">
+      {pieces.map((piece) => {
+        const num = String(piece.data.number).padStart(3, '0');
+        const opener = getOpener(piece.body);
+        return (
+          <a href={`/heung/${piece.id}`} class="story-card">
+            <span class="story-card-brand">The Book of Heung</span>
+            <span class="story-card-num">HG-{num}</span>
+            <h3 class="story-card-title">{piece.data.title}</h3>
+            <p class="story-card-opener">{opener}</p>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+</Base>
