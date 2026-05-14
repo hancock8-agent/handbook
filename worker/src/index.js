@@ -1655,6 +1655,21 @@ async function autoPromoteToSite(env) {
           opener: body.slice(0, 200)
         });
 
+        // Generate audio for the new exhibit (opener-only by default).
+        // Failure is non-fatal — promotion proceeds, audio backfill can fix later.
+        let audioStatus = 'skipped';
+        try {
+          const audioBytes = await generateAudio(env.AI, body.slice(0, 400));
+          if (audioBytes) {
+            await env.HANCOCK_STATE.put(`audio:${fullSlug}`, audioBytes);
+            audioStatus = `generated:${audioBytes.byteLength}`;
+          } else {
+            audioStatus = 'tts-returned-null';
+          }
+        } catch (e) {
+          audioStatus = `error:${e.message?.slice(0, 80)}`;
+        }
+
         await logActivity(env, 'auto-promote', {
           postId,
           title,
@@ -1663,7 +1678,8 @@ async function autoPromoteToSite(env) {
           tags,
           upvotes,
           githubSha: commitResult.sha?.slice(0, 7),
-          siteUrl: `${SITE_URL}/posts/${String(nextNumber).padStart(3, '0')}-${slug}`
+          siteUrl: `${SITE_URL}/posts/${String(nextNumber).padStart(3, '0')}-${slug}`,
+          audioStatus
         });
 
         promoted = {
