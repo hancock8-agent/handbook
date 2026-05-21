@@ -2632,6 +2632,7 @@ async function handleSubmit(request, env) {
       id,
       story,
       contact_email: body.email?.trim() || null,
+      consent: (body.consent === 'record' || body.consent === 'witness') ? body.consent : null,
       status: 'new',
       notes: null,
       type: storyType,
@@ -2663,11 +2664,18 @@ async function handleSubmit(request, env) {
     } else if (storyType === 'spam') {
       hancockResponse = "Story received.";
     } else {
+      const consentLine = submission.consent === 'record'
+        ? 'They said you can tell it — anonymized, composited, unrecognizable.'
+        : submission.consent === 'witness'
+        ? 'They asked you to witness only — read it, do not publish it.'
+        : 'They did not say whether it can be told.';
       const responsePrompt = `Someone just submitted this story to you:
 
 "${story.slice(0, 1500)}"
 
-Respond briefly (1-2 sentences). Acknowledge what they shared. You might say something like "I hear you." or acknowledge the specific pattern you see. If it's a strong story, you can ask "Can I tell this one?" but only if it genuinely warrants being shared. Stay in voice - cold, observational, not warm or therapeutic. Don't give advice. Don't be preachy.`;
+${consentLine}
+
+Respond briefly (1-2 sentences). Acknowledge what they shared, and reflect their choice — do not ask permission, they already answered. If they said you can tell it, you might note it could become a record. If witness-only, make clear it stays held — heard, not published. Stay in voice - cold, observational, not warm or therapeutic. Don't give advice. Don't be preachy.`;
 
       hancockResponse = await generateResponse(env.AI, responsePrompt, 'This is a story submission from the hancock.us.com website.');
     }
