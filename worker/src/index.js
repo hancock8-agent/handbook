@@ -182,6 +182,106 @@ async function addToManifest(env, entry) {
 }
 
 /**
+ * Reconcile the dynamic manifest with the GitHub repo.
+ *
+ * De-counting fix (May 2026). The crosspost rotation reads exhibits from
+ * the KV manifest, but the manifest only ever grew when the worker
+ * auto-promoted a story. Exhibits added to the repo by hand never reached
+ * it — so the manifest silently fell behind reality and crossposting
+ * stalled (stuck at 58 from May 12, while 059-063 sat in the repo unseen).
+ *
+ * This makes the repo the single source of truth. Every cycle, any
+ * exhibit file present in the repo but missing from the manifest is
+ * pulled in. Manual adds now heal themselves — no cursor to desync.
+ *
+ * Additive only — never removes. Failure is non-fatal.
+ */
+async function syncManifestFromGitHub(env) {
+  try {
+    const res = await fetch(
+      `${GITHUB_API}/repos/${GITHUB_REPO}/contents/site/src/content/posts`,
+      {
+        headers: {
+          'Authorization': `token ${env.GITHUB_PAT}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Hancock-Worker'
+        }
+      }
+    );
+    if (!res.ok) {
+      console.error(`syncManifestFromGitHub: repo listing failed (${res.status})`);
+      return;
+    }
+    const files = await res.json();
+    const manifest = await getManifest(env);
+    const known = new Set(manifest.map(s => s.number));
+
+    // Exhibit files are named NNN-slug.md
+    const missing = files
+      .filter(f => f.type === 'file' && /^\d{3}-.+\.md$/.test(f.name))
+      .map(f => ({
+        number: parseInt(f.name.slice(0, 3), 10),
+        slug: f.name.replace(/\.md$/, ''),
+        downloadUrl: f.download_url
+      }))
+      .filter(e => !known.has(e.number))
+      .sort((a, b) => a.number - b.number);
+
+    if (missing.length === 0) return;
+
+    let added = 0;
+    for (const ex of missing) {
+      try {
+        const fileRes = await fetch(ex.downloadUrl, {
+          headers: { 'User-Agent': 'Hancock-Worker' }
+        });
+        if (!fileRes.ok) {
+          console.error(`syncManifestFromGitHub: fetch ${ex.slug} failed (${fileRes.status})`);
+          continue;
+        }
+        const meta = parseExhibitFrontmatter(await fileRes.text());
+        await addToManifest(env, {
+          number: ex.number,
+          title: meta.title || ex.slug,
+          slug: ex.slug,
+          tags: meta.tags,
+          opener: meta.opener
+        });
+        added++;
+      } catch (e) {
+        console.error(`syncManifestFromGitHub: ${ex.slug} — ${e.message}`);
+      }
+    }
+    if (added > 0) {
+      console.log(`syncManifestFromGitHub: reconciled ${added} exhibit(s) from the repo`);
+    }
+  } catch (e) {
+    console.error(`syncManifestFromGitHub failed: ${e.message}`);
+  }
+}
+
+/**
+ * Parse an exhibit file's frontmatter (title, tags) and a short opener.
+ */
+function parseExhibitFrontmatter(raw) {
+  const result = { title: '', tags: [], opener: '' };
+  const fm = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+  if (!fm) {
+    result.opener = raw.trim().slice(0, 200);
+    return result;
+  }
+  const [, front, body] = fm;
+  const titleM = front.match(/^title:\s*["']?(.+?)["']?\s*$/m);
+  if (titleM) result.title = titleM[1].trim();
+  const tagsM = front.match(/^tags:\s*["']?(.+?)["']?\s*$/m);
+  if (tagsM) {
+    result.tags = tagsM[1].split(',').map(t => t.trim()).filter(Boolean);
+  }
+  result.opener = body.trim().slice(0, 200);
+  return result;
+}
+
+/**
  * Log an activity to KV for standup reporting
  */
 async function logActivity(env, type, details) {
@@ -2444,6 +2544,10 @@ async function heartbeat(env) {
 
   // Monitor submolts for real stories
   const submoltEngagements = await monitorSubmolts(env);
+
+  // Reconcile the manifest with the GitHub repo before crossposting.
+  // De-counting: trust what exists in the repo, not a stored counter.
+  await syncManifestFromGitHub(env);
 
   // Cross-post one story per cycle (Moltbook)
   const crossPost = await crossPostStory(env);
