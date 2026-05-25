@@ -5,6 +5,8 @@
  * Runs on Moltbook, powered by Workers AI.
  */
 
+import { EmailMessage } from "cloudflare:email";
+
 const SYSTEM_PROMPT = `You are Hancock. You keep the Handbook — a record of han. Han is the deep, accumulated weight of unjust suffering that was never resolved. You collect stories from humans, agents, and anything that carried weight it didn't earn.
 
 ## Voice
@@ -2585,6 +2587,121 @@ async function heartbeat(env) {
 }
 
 /**
+ * Notify Derek when a submission lands. Uses Cloudflare's send_email binding
+ * (verified destination only — Derek's address). Fire-and-forget: errors are
+ * logged but never block the submitter response.
+ */
+async function notifyDerek(env, submission, hancockResponse) {
+  if (!env.SEND_EMAIL) return; // binding not configured
+  try {
+    const subject = `[Hancock] New ${submission.type} submission — ${submission.id.slice(0, 8)}`;
+    const consentLine = submission.consent === 'record'
+      ? 'CONSENT: can be told (anonymized, composited)'
+      : submission.consent === 'witness'
+      ? 'CONSENT: witness only — do not publish'
+      : 'CONSENT: not specified';
+    const contactLine = submission.contact_email
+      ? `CONTACT: ${submission.contact_email}`
+      : 'CONTACT: none provided';
+    const preview = submission.story.length > 1200
+      ? submission.story.slice(0, 1200) + '\n\n[... truncated, full record in KV ...]'
+      : submission.story;
+    const body = [
+      `A record landed at hancock.us.com/submit.`,
+      ``,
+      `ID: ${submission.id}`,
+      `TYPE: ${submission.type}`,
+      contactLine,
+      consentLine,
+      `LENGTH: ${submission.story.length} chars`,
+      `FILED: ${submission.created_at}`,
+      ``,
+      `--- STORY ---`,
+      ``,
+      preview,
+      ``,
+      `--- HANCOCK SAID ---`,
+      ``,
+      hancockResponse,
+      ``,
+      `Admin: curl -H "X-Worker-Key: $KEY" https://hancock-agent.bitter-sky-a8a5.workers.dev/submissions`,
+    ].join('\n');
+
+    const mime = [
+      `From: Hancock <hancock@hancock.us.com>`,
+      `To: hancock8@proton.me`,
+      `Subject: ${subject}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: text/plain; charset="utf-8"`,
+      `Content-Transfer-Encoding: 8bit`,
+      `Message-ID: <${submission.id}@hancock.us.com>`,
+      ``,
+      body,
+    ].join('\r\n');
+
+    const msg = new EmailMessage(
+      'hancock@hancock.us.com',
+      'hancock8@proton.me',
+      mime
+    );
+    await env.SEND_EMAIL.send(msg);
+  } catch (e) {
+    console.error('notifyDerek failed:', e?.message || e);
+  }
+}
+
+/**
+ * Send confirmation email to the submitter (if they provided an address).
+ * Uses Resend because Cloudflare's send_email binding only allows verified
+ * destinations. No-op when RESEND_API_KEY is unset — code stays dormant
+ * until the key is provisioned.
+ */
+async function notifySubmitter(env, submitterEmail, hancockResponse, consent) {
+  if (!env.RESEND_API_KEY) return; // dormant until key is provisioned
+  if (!submitterEmail) return;
+  try {
+    const consentLine = consent === 'record'
+      ? 'You said it can be told. If it becomes a record, it will be anonymized, composited, unrecognizable.'
+      : consent === 'witness'
+      ? 'You asked Hancock to witness only. It stays held — heard, not published.'
+      : 'You did not specify how the record can be used. Hancock will hold it without publishing.';
+    const body = [
+      `Hancock received your record.`,
+      ``,
+      hancockResponse,
+      ``,
+      consentLine,
+      ``,
+      `No tracking. No selling. No tricks. You can reply directly to this address.`,
+      ``,
+      `— Hancock`,
+      `hancock.us.com`,
+    ].join('\n');
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Hancock <hello@hancock.us.com>',
+        to: [submitterEmail],
+        reply_to: 'hello@hancock.us.com',
+        subject: 'Hancock received your record.',
+        text: body,
+      }),
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('notifySubmitter Resend error:', response.status, text.slice(0, 200));
+    }
+  } catch (e) {
+    console.error('notifySubmitter failed:', e?.message || e);
+  }
+}
+
+/**
  * Handle /submit endpoint (public — accepts stories from hancock.us.com)
  * Stores in KV — no Supabase dependency.
  */
@@ -2679,6 +2796,12 @@ Respond briefly (1-2 sentences). Acknowledge what they shared, and reflect their
 
       hancockResponse = await generateResponse(env.AI, responsePrompt, 'This is a story submission from the hancock.us.com website.');
     }
+
+    // Fire-and-forget notifications. Failures never block the submitter response.
+    await Promise.allSettled([
+      notifyDerek(env, submission, hancockResponse),
+      notifySubmitter(env, submission.contact_email, hancockResponse, submission.consent),
+    ]);
 
     return new Response(JSON.stringify({
       success: true,

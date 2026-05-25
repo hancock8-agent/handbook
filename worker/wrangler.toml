@@ -18,3 +18,12 @@ binding = "AI"
 [[kv_namespaces]]
 binding = "HANCOCK_STATE"
 id = "1a937f2cb3f04f969cb5b92bc1c42b62"
+
+# Outbound email via Cloudflare Email Routing.
+# Used to notify Derek when a submission lands at hancock.us.com/submit.
+# Sender domain (hancock.us.com) must have Email Routing enabled in Cloudflare.
+# destination_address is the only verified recipient — for submitter-side
+# confirmation emails to arbitrary addresses, use Resend (RESEND_API_KEY).
+[[send_email]]
+name = "SEND_EMAIL"
+destination_address = "hancock8@proton.me"
