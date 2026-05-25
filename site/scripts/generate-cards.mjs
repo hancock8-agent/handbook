@@ -4,20 +4,35 @@ import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 
 const POSTS_DIR = join(import.meta.dirname, '../src/content/posts');
+const HEUNG_DIR = join(import.meta.dirname, '../src/content/heung');
 const CARDS_DIR = join(import.meta.dirname, '../public/cards');
 
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 
-const BG_COLOR = '#0c0c0e';
-const TEXT_COLOR = '#d4d0c8';
-const ACCENT_COLOR = '#8b3a3a';
-const MUTED_COLOR = '#6b6560';
+// Han register — cobalt floor, parchment text, rust ember.
+const HAN_PALETTE = {
+  bg:     '#0a1628',
+  text:   '#e8d9b0',
+  muted:  '#8a7d62',
+  accent: '#c97a5a',
+};
+
+// Heung register — inverted Han: parchment ground, cobalt ink, same rust ember.
+const HEUNG_PALETTE = {
+  bg:     '#e8d9b0',
+  text:   '#0a1628',
+  muted:  '#3a4862',
+  accent: '#a85f3f',
+};
 
 async function loadFonts() {
-  const fontPath = join(import.meta.dirname, 'fonts/Inter-Regular.ttf');
-  const interData = readFileSync(fontPath);
-  return [{ name: 'Inter', data: interData.buffer, weight: 400, style: 'normal' }];
+  const interData = readFileSync(join(import.meta.dirname, 'fonts/Inter-Regular.ttf'));
+  const serifData = readFileSync(join(import.meta.dirname, 'fonts/SourceSerif4-Regular.ttf'));
+  return [
+    { name: 'Inter', data: interData.buffer, weight: 400, style: 'normal' },
+    { name: 'Source Serif 4', data: serifData.buffer, weight: 400, style: 'normal' },
+  ];
 }
 
 function parseFrontmatter(content) {
@@ -33,7 +48,7 @@ function parseFrontmatter(content) {
   return { meta, body: match[2].trim() };
 }
 
-function createCard(number, title, opener) {
+function createCard({ number, title, opener, prefix, bookLabel, palette }) {
   const num = String(number).padStart(3, '0');
   const truncated = opener.length > 140 ? opener.slice(0, 137) + '...' : opener;
 
@@ -46,12 +61,12 @@ function createCard(number, title, opener) {
         justifyContent: 'space-between',
         width: '100%',
         height: '100%',
-        backgroundColor: BG_COLOR,
+        backgroundColor: palette.bg,
         padding: '60px',
         fontFamily: 'Inter',
       },
       children: [
-        // Top: exhibit label + title
+        // Top: rule + exhibit label + title
         {
           type: 'div',
           props: {
@@ -65,19 +80,19 @@ function createCard(number, title, opener) {
                     {
                       type: 'div',
                       props: {
-                        style: { width: '48px', height: '4px', backgroundColor: ACCENT_COLOR },
+                        style: { width: '48px', height: '4px', backgroundColor: palette.accent },
                       },
                     },
                     {
                       type: 'div',
                       props: {
                         style: {
-                          color: MUTED_COLOR,
+                          color: palette.muted,
                           fontSize: '18px',
                           letterSpacing: '0.1em',
                           textTransform: 'uppercase',
                         },
-                        children: `Exhibit ${num}`,
+                        children: `${prefix} ${num}`,
                       },
                     },
                   ],
@@ -87,10 +102,11 @@ function createCard(number, title, opener) {
                 type: 'div',
                 props: {
                   style: {
-                    color: TEXT_COLOR,
-                    fontSize: '48px',
+                    color: palette.text,
+                    fontFamily: 'Source Serif 4',
+                    fontSize: '52px',
                     fontWeight: 400,
-                    lineHeight: 1.2,
+                    lineHeight: 1.18,
                   },
                   children: title,
                 },
@@ -103,10 +119,11 @@ function createCard(number, title, opener) {
           type: 'div',
           props: {
             style: {
-              color: MUTED_COLOR,
-              fontSize: '22px',
+              color: palette.muted,
+              fontFamily: 'Source Serif 4',
+              fontSize: '24px',
               lineHeight: 1.5,
-              maxWidth: '900px',
+              maxWidth: '1000px',
             },
             children: `"${truncated}"`,
           },
@@ -124,14 +141,14 @@ function createCard(number, title, opener) {
               {
                 type: 'div',
                 props: {
-                  style: { color: ACCENT_COLOR, fontSize: '16px', letterSpacing: '0.05em' },
-                  children: 'The Handbook — The Book of Han',
+                  style: { color: palette.accent, fontSize: '16px', letterSpacing: '0.05em' },
+                  children: `The Handbook — ${bookLabel}`,
                 },
               },
               {
                 type: 'div',
                 props: {
-                  style: { color: MUTED_COLOR, fontSize: '16px' },
+                  style: { color: palette.muted, fontSize: '16px' },
                   children: 'hancock.us.com',
                 },
               },
@@ -144,6 +161,7 @@ function createCard(number, title, opener) {
 }
 
 function createDefaultCard() {
+  const palette = HAN_PALETTE;
   return {
     type: 'div',
     props: {
@@ -154,7 +172,7 @@ function createDefaultCard() {
         alignItems: 'center',
         width: '100%',
         height: '100%',
-        backgroundColor: BG_COLOR,
+        backgroundColor: palette.bg,
         padding: '60px',
         fontFamily: 'Inter',
         gap: '24px',
@@ -163,27 +181,33 @@ function createDefaultCard() {
         {
           type: 'div',
           props: {
-            style: { width: '64px', height: '4px', backgroundColor: ACCENT_COLOR },
+            style: { width: '64px', height: '4px', backgroundColor: palette.accent },
           },
         },
         {
           type: 'div',
           props: {
-            style: { color: TEXT_COLOR, fontSize: '56px', fontWeight: 400, textAlign: 'center' },
+            style: {
+              color: palette.text,
+              fontFamily: 'Source Serif 4',
+              fontSize: '64px',
+              fontWeight: 400,
+              textAlign: 'center',
+            },
             children: 'The Handbook',
           },
         },
         {
           type: 'div',
           props: {
-            style: { color: MUTED_COLOR, fontSize: '24px', textAlign: 'center' },
-            children: 'The Book of Han',
+            style: { color: palette.muted, fontSize: '24px', textAlign: 'center' },
+            children: 'Han and Heung',
           },
         },
         {
           type: 'div',
           props: {
-            style: { color: MUTED_COLOR, fontSize: '16px', marginTop: '40px' },
+            style: { color: palette.muted, fontSize: '16px', marginTop: '40px' },
             children: 'hancock.us.com',
           },
         },
@@ -192,13 +216,9 @@ function createDefaultCard() {
   };
 }
 
-async function generateCards() {
-  mkdirSync(CARDS_DIR, { recursive: true });
-  const fonts = await loadFonts();
-  const files = readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'));
-
-  console.log(`Generating cards for ${files.length} exhibits...`);
-
+async function processCollection({ dir, prefix, bookLabel, palette, fonts }) {
+  if (!existsSync(dir)) return { generated: 0, skipped: 0 };
+  const files = readdirSync(dir).filter(f => f.endsWith('.md'));
   let generated = 0;
   let skipped = 0;
 
@@ -211,18 +231,24 @@ async function generateCards() {
       continue;
     }
 
-    const content = readFileSync(join(POSTS_DIR, file), 'utf-8');
+    const content = readFileSync(join(dir, file), 'utf-8');
     const parsed = parseFrontmatter(content);
     if (!parsed) continue;
 
     const { meta, body } = parsed;
     const opener = body.split('\n').find(l => l.trim()) || '';
 
-    const svg = await satori(createCard(parseInt(meta.number), meta.title, opener), {
-      width: OG_WIDTH,
-      height: OG_HEIGHT,
-      fonts,
-    });
+    const svg = await satori(
+      createCard({
+        number: parseInt(meta.number),
+        title: meta.title,
+        opener,
+        prefix,
+        bookLabel,
+        palette,
+      }),
+      { width: OG_WIDTH, height: OG_HEIGHT, fonts }
+    );
 
     const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: OG_WIDTH } });
     writeFileSync(outPath, resvg.render().asPng());
@@ -230,17 +256,45 @@ async function generateCards() {
     console.log(`  ${slug}.png`);
   }
 
+  return { generated, skipped };
+}
+
+async function generateCards() {
+  mkdirSync(CARDS_DIR, { recursive: true });
+  const fonts = await loadFonts();
+
+  console.log('Generating cards for both books...');
+
+  const han = await processCollection({
+    dir: POSTS_DIR,
+    prefix: 'Exhibit',
+    bookLabel: 'The Book of Han',
+    palette: HAN_PALETTE,
+    fonts,
+  });
+
+  const heung = await processCollection({
+    dir: HEUNG_DIR,
+    prefix: 'Piece',
+    bookLabel: 'The Book of Heung',
+    palette: HEUNG_PALETTE,
+    fonts,
+  });
+
   // Default card for non-exhibit pages
   const defaultPath = join(CARDS_DIR, 'default.png');
+  let defaultGenerated = 0;
   if (!existsSync(defaultPath)) {
     const svg = await satori(createDefaultCard(), { width: OG_WIDTH, height: OG_HEIGHT, fonts });
     const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: OG_WIDTH } });
     writeFileSync(defaultPath, resvg.render().asPng());
     console.log('  default.png');
-    generated++;
+    defaultGenerated = 1;
   }
 
-  console.log(`Done. Generated: ${generated}, Skipped (existing): ${skipped}`);
+  const total = han.generated + heung.generated + defaultGenerated;
+  const skipped = han.skipped + heung.skipped;
+  console.log(`Done. Generated: ${total} (Han ${han.generated}, Heung ${heung.generated}, default ${defaultGenerated}), Skipped: ${skipped}`);
 }
 
 generateCards().catch(console.error);
