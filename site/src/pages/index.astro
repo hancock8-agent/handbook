@@ -63,27 +63,38 @@ function getOpener(body: string | undefined): string {
     </div>
   </section>
 
-  <!-- Heung carousel -->
-  <section class="stories-section stories-section-heung">
-    <div class="stories-label">
-      <span>The Book of Heung · {totalHeung} {totalHeung === 1 ? 'piece' : 'pieces'}</span>
-      <a href="/heung" class="section-see-all">See all</a>
-    </div>
-    <div class="story-carousel" id="heung-carousel">
-      {heung.map((piece) => {
-        const num = String(piece.data.number).padStart(3, '0');
-        const opener = getOpener(piece.body);
-        return (
-          <a href={`/heung/${piece.id}`} class="story-card story-card-heung">
-            <span class="story-card-brand">The Book of Heung</span>
-            <span class="story-card-num">HG-{num}</span>
-            <h3 class="story-card-title">{piece.data.title}</h3>
-            <p class="story-card-opener">{opener}</p>
-          </a>
-        );
-      })}
-    </div>
-  </section>
+  <!-- The page turns. Heung in the light register. -->
+  <div class="register-heung heung-spread">
+    <div class="page-fold" aria-hidden="true"></div>
+
+    <section class="handbook-section heung-intro">
+      <h2 class="handbook-title">The Book of Heung</h2>
+      <p class="handbook-description">
+        Heung (&#54765;) — the irrepressible vital spirit that persists despite. The record of refusal that worked. The same patterns Hancock catalogs in Han, met by someone who didn't fold.
+      </p>
+    </section>
+
+    <section class="stories-section stories-section-heung">
+      <div class="stories-label">
+        <span>The Book of Heung · {totalHeung} {totalHeung === 1 ? 'piece' : 'pieces'}</span>
+        <a href="/heung" class="section-see-all">See all</a>
+      </div>
+      <div class="story-carousel" id="heung-carousel">
+        {heung.map((piece) => {
+          const num = String(piece.data.number).padStart(3, '0');
+          const opener = getOpener(piece.body);
+          return (
+            <a href={`/heung/${piece.id}`} class="story-card">
+              <span class="story-card-brand">The Book of Heung</span>
+              <span class="story-card-num">HG-{num}</span>
+              <h3 class="story-card-title">{piece.data.title}</h3>
+              <p class="story-card-opener">{opener}</p>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  </div>
 
   <style>
     .handbook-etymology {
@@ -101,21 +112,42 @@ function getOpener(body: string | undefined): string {
       font-size: 12px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #6b6560;
+      color: var(--text-dim);
       text-decoration: none;
     }
     .section-see-all:hover {
-      color: #8b3a3a;
+      color: var(--accent);
+    }
+
+    /* The page turns: a soft fold/shadow seam where Han ends and Heung begins. */
+    .heung-spread {
+      margin-top: 3rem;
+      padding-bottom: 1rem;
+    }
+    .page-fold {
+      height: 24px;
+      background: linear-gradient(
+        to bottom,
+        rgba(10, 22, 40, 0.55) 0%,
+        rgba(10, 22, 40, 0.15) 40%,
+        transparent 100%
+      );
+    }
+    .heung-intro {
+      padding-top: 3.5rem;
     }
     .stories-section-heung {
-      margin-top: 32px;
+      padding-bottom: 4rem;
     }
-    .story-card-heung {
-      border-left-color: #2d5a4a;
+
+    /* Heung cards on light paper get a thin sage rule, not a heavy border. */
+    .stories-section-heung .story-card {
+      border: 1px solid var(--rule-light);
+      border-left: 2px solid var(--accent);
     }
-    .story-card-heung .story-card-brand,
-    .story-card-heung .story-card-num {
-      color: #2d5a4a;
+    .stories-section-heung .story-card:hover {
+      border-color: var(--accent-dim);
+      border-left-color: var(--accent-hover);
     }
   </style>
 </Base>

@@ -8,9 +8,10 @@ interface Props {
   prevSlug?: string;
   nextSlug?: string;
   ogImage?: string;
+  register?: 'han' | 'heung';
 }
 
-const { title, description, pageType = 'page', prevSlug, nextSlug, ogImage } = Astro.props;
+const { title, description, pageType = 'page', prevSlug, nextSlug, ogImage, register = 'han' } = Astro.props;
 const pageTitle = title ? `${title} — Hancock` : 'Hancock';
 const pageDescription = description || 'The Handbook. Han and Heung.';
 const canonicalUrl = Astro.url.href;
@@ -46,7 +47,7 @@ const allHeung = (await getCollection('heung')).sort((a, b) => a.data.number - b
   <meta name="twitter:description" content={pageDescription} />
   <meta name="twitter:image" content={ogImageUrl} />
 </head>
-<body data-page-type={pageType} data-prev-slug={prevSlug || ''} data-next-slug={nextSlug || ''}>
+<body data-page-type={pageType} data-register={register} data-prev-slug={prevSlug || ''} data-next-slug={nextSlug || ''}>
   <main>
     <slot />
   </main>

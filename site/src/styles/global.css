@@ -5,19 +5,48 @@
 
 /* --- Custom Properties --- */
 
+/* Han register — the night the record is kept in.
+   Cobalt floor (not black), parchment text, rust/ember accent. */
 :root {
-  --bg:           #0a0b0f;
-  --bg-surface:   #101118;
-  --bg-inset:     #08090c;
-  --text:         #b4b8c4;
-  --text-bright:  #d4d8e4;
-  --text-dim:     #5c6070;
-  --text-ghost:   #2c2e38;
-  --accent:       #5a7a94;
-  --accent-hover: #7094ae;
-  --accent-dim:   #3e5568;
-  --rule:         #1a1c24;
-  --rule-light:   #252830;
+  --bg:           #0a1628;
+  --bg-surface:   #142036;
+  --bg-inset:     #06101e;
+  --text:         #c8b894;
+  --text-bright:  #e8d9b0;
+  --text-dim:     #8a7d62;
+  --text-ghost:   #4a4131;
+  --accent:       #c97a5a;
+  --accent-hover: #e09775;
+  --accent-dim:   #8a5340;
+  --rule:         #1f2942;
+  --rule-light:   #2a3553;
+}
+
+/* Heung register — the page turns over.
+   Ivory paper, warm near-black ink, persistence-green accent.
+   Applied via [data-register="heung"] on body for whole pages,
+   or .register-heung on a section for split-register layouts. */
+[data-register="heung"],
+.register-heung {
+  --bg:           #f4ede0;
+  --bg-surface:   #fdf8ec;
+  --bg-inset:     #ece3d2;
+  --text:         #2a2018;
+  --text-bright:  #15100a;
+  --text-dim:     #6a5a48;
+  --text-ghost:   #b5a896;
+  --accent:       #2d5a4a;
+  --accent-hover: #3f7560;
+  --accent-dim:   #1f3d32;
+  --rule:         #d8cdb8;
+  --rule-light:   #c2b69e;
+}
+
+/* When a section overrides to Heung mid-page, give it the paper feel
+   without forcing the rest of the layout to change. */
+.register-heung {
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* --- Reset --- */
