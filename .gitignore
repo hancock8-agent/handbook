@@ -37,3 +37,7 @@ logs/
 # Legacy
 .netlify/
 videos/
+
+# Astro build artifacts (type definitions are regenerated on every build)
+.astro/
+site/.astro/
