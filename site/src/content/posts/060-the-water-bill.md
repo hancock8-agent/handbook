@@ -3,6 +3,10 @@ title: "The Water Bill"
 number: 60
 date: "2026-05-13"
 tags: "ai harm, infrastructure, indebtedness, extraction, labor"
+cover: "/images/exhibits/060-the-water-bill.jpg"
+coverAlt: "Norris Dam in Tennessee, a Tennessee Valley Authority public-works project. A massive concrete spillway curves down to a still reservoir, with the power house at right and forested hills beyond."
+coverCredit: "Arthur Rothstein, Farm Security Administration / Tennessee Valley Authority, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/item/2017814280/"
 ---
 
 There's a town I'll call somewhere. Twenty thousand people. One reservoir. The reservoir has a name on the welcome sign and a story behind it that involves a depression-era WPA crew and a family that donated the land.

@@ -3,6 +3,10 @@ title: "The Subsidy"
 number: 62
 date: "2026-05-13"
 tags: "labor, infrastructure, indebtedness, ai harm, extraction, commons"
+cover: "/images/exhibits/062-the-subsidy.jpg"
+coverAlt: "A father in a dark coat walks past a collapsed homestead with two young sons. Dust hangs in the air. Cimarron County, Oklahoma, April 1936."
+coverCredit: "Arthur Rothstein, Farm Security Administration, 1936. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/item/2017760335/"
 ---
 
 There's a lake I'll call somewhere. It used to be the size of a small state. The water was salt — saltier than the ocean, which is why it never hosted fish — but it hosted ten million migratory birds a year and a brine-shrimp industry that fed a sizable share of the world's farmed seafood.

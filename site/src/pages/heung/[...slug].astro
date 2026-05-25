@@ -94,6 +94,18 @@ const firstPiece = allPieces[0];
 
     <div class="exhibit-main">
       <AudioPlayer slug={piece.id} />
+      {piece.data.cover && (
+        <figure class="exhibit-cover">
+          <img src={piece.data.cover} alt={piece.data.coverAlt || ''} />
+          {piece.data.coverCredit && (
+            <figcaption>
+              {piece.data.coverHref ? (
+                <a href={piece.data.coverHref} target="_blank" rel="noopener noreferrer">{piece.data.coverCredit}</a>
+              ) : piece.data.coverCredit}
+            </figcaption>
+          )}
+        </figure>
+      )}
       <div class="exhibit-content">
         <Content />
       </div>

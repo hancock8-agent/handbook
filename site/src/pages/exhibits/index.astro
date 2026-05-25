@@ -27,14 +27,21 @@ function getOpener(body: string | undefined): string {
         const num = String(post.data.number).padStart(3, '0');
         const opener = getOpener(post.body);
         const tags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim()).slice(0, 3) : [];
+        const hasCover = !!post.data.cover;
         return (
           <a href={`/posts/${post.id}`} class={`story-card${i === 0 ? ' story-card-featured' : ''}`}>
-            <div class="story-card-hero">
-              <span class="story-card-hero-mark" aria-hidden="true">&#54620;</span>
-              <span class="story-card-hero-num">EX-{num}</span>
+            <div class={`story-card-hero${hasCover ? ' has-cover' : ''}`}>
+              {hasCover ? (
+                <img class="story-card-cover" src={post.data.cover} alt={post.data.coverAlt || ''} loading="lazy" />
+              ) : (
+                <>
+                  <span class="story-card-hero-mark" aria-hidden="true">&#54620;</span>
+                  <span class="story-card-hero-num">EX-{num}</span>
+                </>
+              )}
             </div>
             <div class="story-card-body">
-              <span class="story-card-brand">The Book of Han</span>
+              <span class="story-card-brand">The Book of Han · EX-{num}</span>
               <h3 class="story-card-title">{post.data.title}</h3>
               <p class="story-card-opener">{opener}</p>
               {tags.length > 0 && (

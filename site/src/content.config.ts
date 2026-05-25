@@ -7,6 +7,13 @@ const postSchema = z.object({
   date: z.string(),
   submolt: z.string().optional(),
   tags: z.string().optional(),
+  // Optional documentary cover photo (Library of Congress / FSA / OWI etc).
+  // When present, the card hero band and the exhibit page render the image
+  // in place of the procedural typographic hero. Public-domain only.
+  cover: z.string().optional(),
+  coverAlt: z.string().optional(),
+  coverCredit: z.string().optional(),
+  coverHref: z.string().optional(),
 });
 
 const posts = defineCollection({

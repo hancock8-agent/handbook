@@ -94,6 +94,18 @@ const firstExhibit = allPosts[0];
 
     <div class="exhibit-main">
       <AudioPlayer slug={post.id} />
+      {post.data.cover && (
+        <figure class="exhibit-cover">
+          <img src={post.data.cover} alt={post.data.coverAlt || ''} />
+          {post.data.coverCredit && (
+            <figcaption>
+              {post.data.coverHref ? (
+                <a href={post.data.coverHref} target="_blank" rel="noopener noreferrer">{post.data.coverCredit}</a>
+              ) : post.data.coverCredit}
+            </figcaption>
+          )}
+        </figure>
+      )}
       <div class="exhibit-content">
         <Content />
       </div>
