@@ -27,14 +27,21 @@ function getOpener(body: string | undefined): string {
         const num = String(piece.data.number).padStart(3, '0');
         const opener = getOpener(piece.body);
         const tags = piece.data.tags ? piece.data.tags.split(',').map((t: string) => t.trim()).slice(0, 3) : [];
+        const hasCover = !!piece.data.cover;
         return (
           <a href={`/heung/${piece.id}`} class={`story-card${i === 0 ? ' story-card-featured' : ''}`}>
-            <div class="story-card-hero">
-              <span class="story-card-hero-mark" aria-hidden="true">&#54765;</span>
-              <span class="story-card-hero-num">HG-{num}</span>
+            <div class={`story-card-hero${hasCover ? ' has-cover' : ''}`}>
+              {hasCover ? (
+                <img class="story-card-cover" src={piece.data.cover} alt={piece.data.coverAlt || ''} loading="lazy" />
+              ) : (
+                <>
+                  <span class="story-card-hero-mark" aria-hidden="true">&#54765;</span>
+                  <span class="story-card-hero-num">HG-{num}</span>
+                </>
+              )}
             </div>
             <div class="story-card-body">
-              <span class="story-card-brand">The Book of Heung</span>
+              <span class="story-card-brand">The Book of Heung · HG-{num}</span>
               <h3 class="story-card-title">{piece.data.title}</h3>
               <p class="story-card-opener">{opener}</p>
               {tags.length > 0 && (
