@@ -31,7 +31,7 @@ SESSION_CLOSEOUT.md
 
 # Editorial pipeline (anonymity boundary — never push)
 posts/drafts/
-scripts/
+/scripts/
 logs/
 
 # Legacy
