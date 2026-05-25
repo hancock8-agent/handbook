@@ -292,13 +292,90 @@ hr.light {
 .story-card {
   background: var(--bg-surface);
   border: 1px solid var(--rule-light);
-  padding: 1.5rem 1.5rem 1.25rem;
+  padding: 0 0 1.25rem;
   display: flex;
   flex-direction: column;
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s, transform 0.15s;
   min-height: 14rem;
+  overflow: hidden;
+}
+
+/* Visual hero band at the top of every card.
+   Gradient ground + oversized exhibit number + Korean character watermark.
+   Gives each card a "magazine cover" visual identity without needing photos. */
+.story-card-hero {
+  aspect-ratio: 16 / 9;
+  position: relative;
+  background:
+    radial-gradient(
+      ellipse at top right,
+      var(--accent-dim) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      135deg,
+      var(--bg-inset) 0%,
+      var(--bg-surface) 70%
+    );
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.story-card-hero-num {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 4.5vw, 2.4rem);
+  color: var(--text-bright);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  z-index: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.story-card-hero-mark {
+  position: absolute;
+  top: -0.4rem;
+  right: -1rem;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(7rem, 18vw, 10rem);
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.18;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Featured hero is taller and gets a stronger gradient. */
+.story-card-featured .story-card-hero {
+  aspect-ratio: 5 / 2;
+}
+
+.story-card-featured .story-card-hero-num {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+
+.story-card-featured .story-card-hero-mark {
+  font-size: clamp(10rem, 22vw, 14rem);
+  opacity: 0.22;
+}
+
+/* Card body padding now lives below the hero (card itself has padding:0). */
+.story-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1.1rem 1.25rem 0;
+}
+
+.story-card-featured .story-card-body {
+  padding: 1.4rem 1.75rem 0;
 }
 
 /* Carousel-only card sizing — only applies inside .story-carousel. */
@@ -313,7 +390,6 @@ hr.light {
 .story-card-featured {
   grid-column: 1 / -1;
   min-height: 18rem;
-  padding: 2rem 2rem 1.75rem;
   border-left: 3px solid var(--accent);
 }
 

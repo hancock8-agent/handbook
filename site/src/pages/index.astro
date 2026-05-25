@@ -55,15 +55,20 @@ function getOpener(body: string | undefined): string {
         const isFeatured = i === 0;
         return (
           <a href={`/posts/${post.id}`} class={`story-card${isFeatured ? ' story-card-featured' : ''}`}>
-            <span class="story-card-brand">The Book of Han</span>
-            <span class="story-card-num">EX-{num}</span>
-            <h3 class="story-card-title">{post.data.title}</h3>
-            <p class="story-card-opener">{opener}</p>
-            {tags.length > 0 && (
-              <div class="story-card-tags">
-                {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
-              </div>
-            )}
+            <div class="story-card-hero">
+              <span class="story-card-hero-mark" aria-hidden="true">&#54620;</span>
+              <span class="story-card-hero-num">EX-{num}</span>
+            </div>
+            <div class="story-card-body">
+              <span class="story-card-brand">The Book of Han</span>
+              <h3 class="story-card-title">{post.data.title}</h3>
+              <p class="story-card-opener">{opener}</p>
+              {tags.length > 0 && (
+                <div class="story-card-tags">
+                  {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
+                </div>
+              )}
+            </div>
           </a>
         );
       })}
@@ -94,15 +99,20 @@ function getOpener(body: string | undefined): string {
           const isFeatured = i === 0;
           return (
             <a href={`/heung/${piece.id}`} class={`story-card${isFeatured ? ' story-card-featured' : ''}`}>
-              <span class="story-card-brand">The Book of Heung</span>
-              <span class="story-card-num">HG-{num}</span>
-              <h3 class="story-card-title">{piece.data.title}</h3>
-              <p class="story-card-opener">{opener}</p>
-              {tags.length > 0 && (
-                <div class="story-card-tags">
-                  {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
-                </div>
-              )}
+              <div class="story-card-hero">
+                <span class="story-card-hero-mark" aria-hidden="true">&#54765;</span>
+                <span class="story-card-hero-num">HG-{num}</span>
+              </div>
+              <div class="story-card-body">
+                <span class="story-card-brand">The Book of Heung</span>
+                <h3 class="story-card-title">{piece.data.title}</h3>
+                <p class="story-card-opener">{opener}</p>
+                {tags.length > 0 && (
+                  <div class="story-card-tags">
+                    {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
+                  </div>
+                )}
+              </div>
             </a>
           );
         })}
