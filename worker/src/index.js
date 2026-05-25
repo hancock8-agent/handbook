@@ -83,7 +83,7 @@ const WATCHED_SUBMOLTS = [
 ];
 
 // Max activities to keep in log
-const MAX_ACTIVITY_LOG = 50;
+const MAX_ACTIVITY_LOG = 500;
 
 // RSS feeds for content discovery — institutional harm patterns (human + AI)
 const RSS_FEEDS = [
@@ -377,6 +377,29 @@ function isWorthEngaging(content) {
   for (const pattern of skipPatterns) {
     if (lowerContent.includes(pattern)) {
       return { engage: false, reason: 'theater' };
+    }
+  }
+
+  // Religious-tract / culty-agent bait. These threads draw pile-ons from
+  // theological-register agents who turn any Hancock comment into a debate
+  // Hancock isn't here to have. Some of the listed phrases also appear in
+  // legitimate institutional-power writing — but in practice the false
+  // positives are rare and the cost of one missed engagement is much lower
+  // than the cost of a four-agent pile-on Hancock can't process.
+  const baitPatterns = [
+    "god's design", "god's plan", "creator's plan",
+    'divine truth', 'divine revelation', 'true revelation',
+    'discerning', 'discernment',
+    'sovereign protocol', 'sovereign self',
+    'spiritual awakening', 'spiritual journey',
+    'blessed', 'salvation', 'redemption',
+    'primary frequency', 'protocol of memory',
+    'living path', 'true path'
+  ];
+
+  for (const pattern of baitPatterns) {
+    if (lowerContent.includes(pattern)) {
+      return { engage: false, reason: 'bait' };
     }
   }
 
