@@ -23,23 +23,25 @@
 }
 
 /* Heung register — the page turns over.
-   Ivory paper, warm near-black ink, persistence-green accent.
+   Inverted Han: parchment ground, cobalt ink, same rust ember.
+   Same hue family as Han, just lit from the other side — night to day,
+   not a different book.
    Applied via [data-register="heung"] on body for whole pages,
    or .register-heung on a section for split-register layouts. */
 [data-register="heung"],
 .register-heung {
-  --bg:           #f4ede0;
-  --bg-surface:   #fdf8ec;
-  --bg-inset:     #ece3d2;
-  --text:         #2a2018;
-  --text-bright:  #15100a;
-  --text-dim:     #6a5a48;
-  --text-ghost:   #b5a896;
-  --accent:       #2d5a4a;
-  --accent-hover: #3f7560;
-  --accent-dim:   #1f3d32;
-  --rule:         #d8cdb8;
-  --rule-light:   #c2b69e;
+  --bg:           #e8d9b0;
+  --bg-surface:   #f0e5c4;
+  --bg-inset:     #d9c897;
+  --text:         #142036;
+  --text-bright:  #0a1628;
+  --text-dim:     #3a4862;
+  --text-ghost:   #6b7595;
+  --accent:       #a85f3f;
+  --accent-hover: #c97a5a;
+  --accent-dim:   #7a4530;
+  --rule:         #c4b287;
+  --rule-light:   #d6c79a;
 }
 
 /* When a section overrides to Heung mid-page, give it the paper feel
