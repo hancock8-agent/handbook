@@ -246,7 +246,34 @@ hr.light {
   margin-bottom: 1rem;
 }
 
-/* Horizontal story carousel */
+/* Editorial grid — replaces the horizontal carousel.
+   Narrative pieces need reading rhythm, not browse rhythm. */
+.story-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 0 1.5rem 1rem;
+  max-width: 76rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .story-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    padding: 0 2rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .story-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+    padding: 0 3rem 1rem;
+  }
+}
+
+/* Legacy horizontal carousel — kept for backward compat; unused now. */
 .story-carousel {
   display: flex;
   overflow-x: auto;
@@ -263,17 +290,49 @@ hr.light {
 }
 
 .story-card {
-  flex: 0 0 85%;
-  max-width: 28rem;
-  scroll-snap-align: start;
   background: var(--bg-surface);
   border: 1px solid var(--rule-light);
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 1.25rem;
   display: flex;
   flex-direction: column;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, transform 0.15s;
+  min-height: 14rem;
+}
+
+/* Carousel-only card sizing — only applies inside .story-carousel. */
+.story-carousel > .story-card {
+  flex: 0 0 85%;
+  max-width: 28rem;
+  scroll-snap-align: start;
+}
+
+/* Featured lead card — spans full width on mobile/tablet,
+   takes 2/3 cols on desktop. Bigger type, longer opener. */
+.story-card-featured {
+  grid-column: 1 / -1;
+  min-height: 18rem;
+  padding: 2rem 2rem 1.75rem;
+  border-left: 3px solid var(--accent);
+}
+
+@media (min-width: 1024px) {
+  .story-card-featured {
+    grid-column: span 2;
+    min-height: 20rem;
+  }
+}
+
+.story-card-featured .story-card-title {
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  line-height: 1.2;
+  -webkit-line-clamp: 3;
+}
+
+.story-card-featured .story-card-opener {
+  font-size: 1.05rem;
+  -webkit-line-clamp: 4;
 }
 
 .story-card:hover {
@@ -324,12 +383,38 @@ hr.light {
   font-size: 0.89rem;
   color: var(--text-dim);
   line-height: 1.65;
-  margin-top: auto;
-  margin-bottom: 0;
+  margin-bottom: 0.75rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Tag chip row at card foot — editorial texture without imagery. */
+.story-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.story-card-tag {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.story-card-featured .story-card-tag {
+  font-size: 0.61rem;
+  padding: 0.22rem 0.65rem;
 }
 
 @media (min-width: 640px) {

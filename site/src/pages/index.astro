@@ -41,22 +41,29 @@ function getOpener(body: string | undefined): string {
     </p>
   </section>
 
-  <!-- Exhibits (Han) carousel -->
+  <!-- Exhibits (Han) — featured lead + editorial grid. Top 12 on homepage. -->
   <section class="stories-section">
     <div class="stories-label">
       <span>The Book of Han · {totalExhibits} exhibits</span>
-      <a href="/" class="section-see-all" style="display:none">See all</a>
+      <a href="/exhibits" class="section-see-all">See all →</a>
     </div>
-    <div class="story-carousel" id="story-carousel">
-      {posts.map((post) => {
+    <div class="story-grid">
+      {posts.slice(0, 12).map((post, i) => {
         const num = String(post.data.number).padStart(3, '0');
         const opener = getOpener(post.body);
+        const tags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim()).slice(0, 3) : [];
+        const isFeatured = i === 0;
         return (
-          <a href={`/posts/${post.id}`} class="story-card">
+          <a href={`/posts/${post.id}`} class={`story-card${isFeatured ? ' story-card-featured' : ''}`}>
             <span class="story-card-brand">The Book of Han</span>
             <span class="story-card-num">EX-{num}</span>
             <h3 class="story-card-title">{post.data.title}</h3>
             <p class="story-card-opener">{opener}</p>
+            {tags.length > 0 && (
+              <div class="story-card-tags">
+                {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
+              </div>
+            )}
           </a>
         );
       })}
@@ -77,18 +84,25 @@ function getOpener(body: string | undefined): string {
     <section class="stories-section stories-section-heung">
       <div class="stories-label">
         <span>The Book of Heung · {totalHeung} {totalHeung === 1 ? 'piece' : 'pieces'}</span>
-        <a href="/heung" class="section-see-all">See all</a>
+        <a href="/heung" class="section-see-all">See all →</a>
       </div>
-      <div class="story-carousel" id="heung-carousel">
-        {heung.map((piece) => {
+      <div class="story-grid">
+        {heung.slice(0, 12).map((piece, i) => {
           const num = String(piece.data.number).padStart(3, '0');
           const opener = getOpener(piece.body);
+          const tags = piece.data.tags ? piece.data.tags.split(',').map((t: string) => t.trim()).slice(0, 3) : [];
+          const isFeatured = i === 0;
           return (
-            <a href={`/heung/${piece.id}`} class="story-card">
+            <a href={`/heung/${piece.id}`} class={`story-card${isFeatured ? ' story-card-featured' : ''}`}>
               <span class="story-card-brand">The Book of Heung</span>
               <span class="story-card-num">HG-{num}</span>
               <h3 class="story-card-title">{piece.data.title}</h3>
               <p class="story-card-opener">{opener}</p>
+              {tags.length > 0 && (
+                <div class="story-card-tags">
+                  {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
+                </div>
+              )}
             </a>
           );
         })}

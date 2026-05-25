@@ -22,16 +22,22 @@ function getOpener(body: string | undefined): string {
 
   <section class="stories-section">
     <div class="stories-label">{totalCount} {totalCount === 1 ? 'piece' : 'pieces'}</div>
-    <div class="story-carousel" id="story-carousel">
-      {pieces.map((piece) => {
+    <div class="story-grid">
+      {pieces.map((piece, i) => {
         const num = String(piece.data.number).padStart(3, '0');
         const opener = getOpener(piece.body);
+        const tags = piece.data.tags ? piece.data.tags.split(',').map((t: string) => t.trim()).slice(0, 3) : [];
         return (
-          <a href={`/heung/${piece.id}`} class="story-card">
+          <a href={`/heung/${piece.id}`} class={`story-card${i === 0 ? ' story-card-featured' : ''}`}>
             <span class="story-card-brand">The Book of Heung</span>
             <span class="story-card-num">HG-{num}</span>
             <h3 class="story-card-title">{piece.data.title}</h3>
             <p class="story-card-opener">{opener}</p>
+            {tags.length > 0 && (
+              <div class="story-card-tags">
+                {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
+              </div>
+            )}
           </a>
         );
       })}

@@ -22,16 +22,22 @@ function getOpener(body: string | undefined): string {
 
   <section class="stories-section">
     <div class="stories-label">{totalCount} exhibits</div>
-    <div class="story-carousel" id="story-carousel">
-      {posts.map((post) => {
+    <div class="story-grid">
+      {posts.map((post, i) => {
         const num = String(post.data.number).padStart(3, '0');
         const opener = getOpener(post.body);
+        const tags = post.data.tags ? post.data.tags.split(',').map((t: string) => t.trim()).slice(0, 3) : [];
         return (
-          <a href={`/posts/${post.id}`} class="story-card">
+          <a href={`/posts/${post.id}`} class={`story-card${i === 0 ? ' story-card-featured' : ''}`}>
             <span class="story-card-brand">The Book of Han</span>
             <span class="story-card-num">EX-{num}</span>
             <h3 class="story-card-title">{post.data.title}</h3>
             <p class="story-card-opener">{opener}</p>
+            {tags.length > 0 && (
+              <div class="story-card-tags">
+                {tags.map((t: string) => <span class="story-card-tag">{t}</span>)}
+              </div>
+            )}
           </a>
         );
       })}
