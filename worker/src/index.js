@@ -2587,6 +2587,91 @@ async function heartbeat(env) {
 }
 
 /**
+ * Aggregate off-platform metrics for /standup. Cached in KV for 1 hour to
+ * stay under rate limits and keep /metrics cheap to call. Pass fresh=true
+ * to bypass the cache.
+ */
+async function getMetrics(env, fresh = false) {
+  const cacheKey = 'metrics:cache';
+  if (!fresh) {
+    const cached = await env.HANCOCK_STATE.get(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.fetchedAt < 60 * 60 * 1000) {
+        return { ...parsed, cached: true };
+      }
+    }
+  }
+
+  const [newsletter, x] = await Promise.all([
+    getButtondownStats(env),
+    getXStats(env),
+  ]);
+
+  const result = {
+    newsletter,
+    x,
+    fetchedAt: Date.now(),
+    cached: false,
+  };
+  await env.HANCOCK_STATE.put(cacheKey, JSON.stringify(result), {
+    expirationTtl: 6 * 60 * 60, // KV ttl: 6h. We honor 1h freshness above.
+  });
+  return result;
+}
+
+async function getButtondownStats(env) {
+  if (!env.BUTTONDOWN_API_KEY) {
+    return { configured: false };
+  }
+  try {
+    const response = await fetch(
+      'https://api.buttondown.com/v1/subscribers?type=regular&page_size=1',
+      { headers: { 'Authorization': `Token ${env.BUTTONDOWN_API_KEY}` } }
+    );
+    if (!response.ok) {
+      return { configured: true, error: `http ${response.status}` };
+    }
+    const data = await response.json();
+    return {
+      configured: true,
+      subscribers: data.count ?? null,
+    };
+  } catch (e) {
+    return { configured: true, error: e?.message || String(e) };
+  }
+}
+
+async function getXStats(env) {
+  if (!env.X_API_KEY || !env.X_ACCESS_TOKEN) {
+    return { configured: false };
+  }
+  try {
+    const url = `${X_API_BASE}/users/me?user.fields=public_metrics`;
+    const authHeader = await buildOAuthHeader('GET', url, env);
+    const response = await fetch(url, {
+      headers: { 'Authorization': authHeader }
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      return { configured: true, error: `http ${response.status}`, detail: text.slice(0, 200) };
+    }
+    const data = await response.json();
+    const pm = data?.data?.public_metrics || {};
+    return {
+      configured: true,
+      handle: data?.data?.username,
+      followers: pm.followers_count ?? null,
+      following: pm.following_count ?? null,
+      tweets: pm.tweet_count ?? null,
+      listed: pm.listed_count ?? null,
+    };
+  } catch (e) {
+    return { configured: true, error: e?.message || String(e) };
+  }
+}
+
+/**
  * Notify Derek when a submission lands. Uses Cloudflare's send_email binding
  * (verified destination only — Derek's address). Fire-and-forget: errors are
  * logged but never block the submitter response.
@@ -3187,6 +3272,15 @@ async function handleRequest(request, env) {
       pendingPost: pendingRaw ? JSON.parse(pendingRaw) : null
     };
     return new Response(JSON.stringify(state), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Off-platform metrics for /standup — Buttondown + X stats, cached 1 hour.
+  if (url.pathname === '/metrics') {
+    if (!isAuthorized(request, env)) return unauthorized();
+    const result = await getMetrics(env, url.searchParams.get('fresh') === '1');
+    return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
