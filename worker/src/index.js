@@ -2413,10 +2413,11 @@ async function crossPostStory(env) {
   let lastCrossPost = await env.HANCOCK_STATE.get('lastCrossPost');
   const nextStory = lastCrossPost ? parseInt(lastCrossPost) + 1 : 1;
 
-  // Cap: don't cross-post past the highest story number in dynamic manifest
+  // When all stories have been cross-posted, restart the rotation from 1
   const maxStoryNumber = manifest[manifest.length - 1].number;
   if (nextStory > maxStoryNumber) {
-    console.log(`All ${manifest.length} stories cross-posted`);
+    console.log(`All ${manifest.length} stories cross-posted — restarting rotation`);
+    await env.HANCOCK_STATE.put('lastCrossPost', '0');
     return null;
   }
 
