@@ -163,9 +163,16 @@ const STORY_MANIFEST = [
 async function getManifest(env) {
   const kvManifest = await env.HANCOCK_STATE.get('storyManifest');
   if (kvManifest) {
-    return JSON.parse(kvManifest);
+    try {
+      const parsed = JSON.parse(kvManifest);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      // KV has empty or invalid manifest — reseed
+      console.warn('getManifest: KV manifest is empty or invalid, reseeding from hardcoded');
+    } catch (e) {
+      console.error('getManifest: JSON.parse failed, reseeding from hardcoded:', e.message);
+    }
   }
-  // Seed KV from hardcoded manifest on first call
+  // Seed KV from hardcoded manifest (first call or after corruption)
   await env.HANCOCK_STATE.put('storyManifest', JSON.stringify(STORY_MANIFEST));
   return [...STORY_MANIFEST];
 }
@@ -2413,6 +2420,12 @@ async function crossPostStory(env) {
   let lastCrossPost = await env.HANCOCK_STATE.get('lastCrossPost');
   const nextStory = lastCrossPost ? parseInt(lastCrossPost) + 1 : 1;
 
+  // Guard against empty manifest (shouldn't happen after getManifest fix, but be safe)
+  if (!manifest || manifest.length === 0) {
+    console.error('crossPostStory: manifest is empty, skipping');
+    return null;
+  }
+
   // When all stories have been cross-posted, restart the rotation from 1
   const maxStoryNumber = manifest[manifest.length - 1].number;
   if (nextStory > maxStoryNumber) {
@@ -3310,6 +3323,18 @@ async function handleRequest(request, env) {
   }
 
   // Debug: reset crosspost date (allows crosspost to run again today)
+  // Debug: inspect the story manifest in KV
+  if (url.pathname === '/manifest') {
+    const manifest = await getManifest(env);
+    const raw = await env.HANCOCK_STATE.get('storyManifest');
+    return new Response(JSON.stringify({
+      count: manifest.length,
+      maxNumber: manifest.length > 0 ? manifest[manifest.length - 1].number : null,
+      rawLength: raw ? raw.length : 0,
+      stories: manifest.map(s => ({ number: s.number, title: s.title, slug: s.slug }))
+    }), { headers: { 'Content-Type': 'application/json' } });
+  }
+
   if (url.pathname === '/reset-crosspost') {
     await env.HANCOCK_STATE.delete('lastCrossPostDate');
     return new Response(JSON.stringify({ reset: true }), {
