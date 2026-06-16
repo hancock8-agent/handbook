@@ -908,18 +908,24 @@ async function verifyPost(apiKey, verificationCode, answer) {
  * Post a new story to Moltbook (with auto-verification)
  */
 async function postStory(apiKey, submolt, title, content, ai = null) {
-  const response = await fetch(`${MOLTBOOK_API}/posts`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      submolt,
-      title,
-      content
-    })
-  });
+  let response;
+  try {
+    response = await fetch(`${MOLTBOOK_API}/posts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        submolt,
+        title,
+        content
+      })
+    });
+  } catch (e) {
+    console.error('postStory: fetch failed:', e.message);
+    return { error: true, message: e.message };
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -927,7 +933,14 @@ async function postStory(apiKey, submolt, title, content, ai = null) {
     return { error: true, status: response.status, message: errorText };
   }
 
-  const result = await response.json();
+  let result;
+  try {
+    result = await response.json();
+  } catch (e) {
+    const raw = await response.text().catch(() => '(unreadable)');
+    console.error('postStory: JSON parse failed. Status:', response.status, 'Body:', raw.slice(0, 500));
+    return { error: true, message: 'JSON parse failed', raw: raw.slice(0, 500) };
+  }
 
   // Handle verification if required
   // Moltbook nests verification inside result.post, with fields verification_code and challenge_text
