@@ -3618,10 +3618,16 @@ async function handleRequest(request, env) {
 
   // Manual cross-post trigger
   if (url.pathname === '/crosspost') {
-    const result = await crossPostStory(env);
-    return new Response(JSON.stringify({ result }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    try {
+      const result = await crossPostStory(env);
+      return new Response(JSON.stringify({ result }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message, stack: e.stack }), {
+        status: 500, headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 
   // Manual submolt monitor trigger
