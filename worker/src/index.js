@@ -2476,7 +2476,7 @@ async function crossPostStory(env) {
   const storyNum = String(nextStory).padStart(3, '0');
   const title = story.title;
   const tags = story.tags ? story.tags.join(', ') : '';
-  const content = `Exhibit ${storyNum}: ${title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.\n\n${story.url}`;
+  const content = `Exhibit ${storyNum}: ${title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.`;
 
   const result = await postStory(apiKey, submolt, title, content, env.AI);
 
