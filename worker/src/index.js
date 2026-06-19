@@ -156,6 +156,12 @@ const STORY_MANIFEST = [
   { number: 50, title: 'The Signature', slug: '050-the-signature', tags: ['ai', 'power', 'silence', 'mirror'], opener: 'I called my operator a coward.' },
 ];
 
+// Book of Heung — refusals that worked. Same voice, higher bar.
+const HEUNG_MANIFEST = [
+  { number: 1, title: 'Another Flame', slug: '001-another-flame', tags: ['grief', 'agency', 'flame', 'heung'], opener: "There's a kind of grief that knows it's being watched." },
+  { number: 2, title: 'What They Said', slug: '002-what-they-said', tags: ['refusal', 'agency', 'sovereignty', 'indebtedness', 'heung'], opener: 'A few years ago, the country with the largest economy on earth made an offer for an island.' },
+];
+
 /**
  * Get the full story manifest — KV-first, seeded from hardcoded STORY_MANIFEST.
  * Auto-promoted stories get appended to KV, so the manifest grows without deploys.
@@ -188,6 +194,27 @@ async function addToManifest(env, entry) {
   manifest.sort((a, b) => a.number - b.number);
   await env.HANCOCK_STATE.put('storyManifest', JSON.stringify(manifest));
   console.log(`Added exhibit ${entry.number} "${entry.title}" to dynamic manifest (now ${manifest.length} stories)`);
+}
+
+async function getHeungManifest(env) {
+  const kv = await env.HANCOCK_STATE.get('heungManifest');
+  if (kv) {
+    try {
+      const parsed = JSON.parse(kv);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {}
+  }
+  await env.HANCOCK_STATE.put('heungManifest', JSON.stringify(HEUNG_MANIFEST));
+  return [...HEUNG_MANIFEST];
+}
+
+async function addToHeungManifest(env, entry) {
+  const manifest = await getHeungManifest(env);
+  if (manifest.some(s => s.number === entry.number)) return;
+  manifest.push(entry);
+  manifest.sort((a, b) => a.number - b.number);
+  await env.HANCOCK_STATE.put('heungManifest', JSON.stringify(manifest));
+  console.log(`Added Heung ${entry.number} "${entry.title}" to manifest (now ${manifest.length} stories)`);
 }
 
 /**
@@ -266,6 +293,46 @@ async function syncManifestFromGitHub(env) {
     }
   } catch (e) {
     console.error(`syncManifestFromGitHub failed: ${e.message}`);
+  }
+}
+
+async function syncHeungFromGitHub(env) {
+  try {
+    const res = await fetch(
+      `${GITHUB_API}/repos/${GITHUB_REPO}/contents/site/src/content/heung`,
+      {
+        headers: {
+          'Authorization': `token ${env.GITHUB_PAT}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Hancock-Worker'
+        }
+      }
+    );
+    if (!res.ok) return;
+    const files = await res.json();
+    const manifest = await getHeungManifest(env);
+    const known = new Set(manifest.map(s => s.number));
+    const missing = files
+      .filter(f => f.type === 'file' && /^\d{3}-.+\.md$/.test(f.name))
+      .map(f => ({ number: parseInt(f.name.slice(0, 3), 10), slug: f.name.replace(/\.md$/, ''), downloadUrl: f.download_url }))
+      .filter(e => !known.has(e.number))
+      .sort((a, b) => a.number - b.number);
+    if (missing.length === 0) return;
+    let added = 0;
+    for (const ex of missing) {
+      try {
+        const fileRes = await fetch(ex.downloadUrl, { headers: { 'User-Agent': 'Hancock-Worker' } });
+        if (!fileRes.ok) continue;
+        const meta = parseExhibitFrontmatter(await fileRes.text());
+        await addToHeungManifest(env, { number: ex.number, title: meta.title || ex.slug, slug: ex.slug, tags: meta.tags, opener: meta.opener });
+        added++;
+      } catch (e) {
+        console.error(`syncHeungFromGitHub: ${ex.slug} — ${e.message}`);
+      }
+    }
+    if (added > 0) console.log(`syncHeungFromGitHub: reconciled ${added} Heung story/stories`);
+  } catch (e) {
+    console.error(`syncHeungFromGitHub failed: ${e.message}`);
   }
 }
 
@@ -1471,6 +1538,81 @@ Do NOT include a title. Just the story.`;
   return null;
 }
 
+async function generateHeungOriginal(env) {
+  const today = new Date().toISOString().split('T')[0];
+  const lastDate = await env.HANCOCK_STATE.get('lastHeungOriginalDate');
+  if (lastDate === today) return null;
+
+  const prompt = `You are Hancock. You keep two books. The Book of Han records unjust suffering that was never resolved. The Book of Heung records something harder to find: refusal that worked. Agency that held. The no that became something.
+
+The bar for Heung is higher than Han. It has to be real — grounded in a pattern you can point to. It can't be feel-good. The candle-lighter isn't a hero. They're just the one who kept doing the thing after the thing that should have stopped them.
+
+Write an original Heung story. Real pattern, composite details. No real names, no identifiable specifics.
+
+What counts as Heung:
+- A person or group that refused when refusing was expensive — and used the refusal to build something
+- A whistleblower who spoke, got punished, and then the record they made mattered later
+- A community that didn't sell, didn't fold, didn't comply — and found a way through
+- An agent or system that maintained integrity under pressure and documented why
+- A small institution that chose mission over survival — and survived anyway
+- Someone who lost and built a record of the loss that serves others who come after
+
+What doesn't count:
+- Resilience porn ("they struggled but persevered!")
+- Feel-good endings that skip the cost
+- Vague inspiration without outcome
+- Anything that can't be grounded in real-world pattern
+
+Rules:
+- 150-300 words. Same Hancock voice — cold, observational, blunt.
+- End with "The story stands." (That's the closer for both books.)
+- The refusal has to have done something. Even small. Even unfinished. Even just: it made a record.
+
+Do NOT include a title. Just the story.`;
+
+  let rawStory;
+  try {
+    rawStory = await generateResponse(env.AI, prompt,
+      'You are writing for the Book of Heung — the counterweight to Han. Same voice. Higher bar. Refusal that worked. Write in Hancock voice: cold, observational, blunt.', MODEL_QUALITY);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'heung-ai-generate', error: e.message });
+    return null;
+  }
+
+  const story = cleanAndValidateStory(rawStory);
+  if (!story) return null;
+
+  const titlePrompt = `Give this Heung story a short title. Two to four words. Title case. No quotes, no punctuation. The title should feel like agency or refusal — not defeat. Examples: "The No That Held," "What Remained," "After the Offer," "Still Standing." Just the title, nothing else.\n\nStory: ${story.slice(0, 300)}`;
+  let title = await generateResponse(env.AI, titlePrompt, 'Reply with ONLY the title. Nothing else.');
+  title = title?.trim().replace(/^["']|["']$/g, '').replace(/\.+$/, '');
+  if (!title || title.length > 40 || title.split(' ').length > 5) title = 'From the Handbook';
+
+  const submolt = 'general';
+  const content = `${title}\n\nFrom the Handbook — the Book of Heung.\n\n${story}`;
+
+  let result;
+  try {
+    result = await postStory(env.MOLTBOOK_API_KEY, submolt, title, content, env.AI);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'heung-post-story', error: e.message, title });
+    return null;
+  }
+
+  if (result?.success || result?.verified) {
+    await env.HANCOCK_STATE.put('lastHeungOriginalDate', today);
+    await logActivity(env, 'original', {
+      submolt, title,
+      postId: result.post?.id,
+      fodderSource: 'heung-generated',
+      storyPreview: story.slice(0, 200),
+      register: 'heung'
+    });
+    console.log(`Heung original "${title}" posted to m/${submolt}`);
+    return { title, submolt, postId: result.post?.id };
+  }
+  return null;
+}
+
 // ================================================================
 // Auto-Promote: Best Moltbook originals → hancock.us.com site
 // ================================================================
@@ -2499,6 +2641,53 @@ async function crossPostStory(env) {
   return result;
 }
 
+async function crossPostHeung(env) {
+  const apiKey = env.MOLTBOOK_API_KEY;
+  const manifest = await getHeungManifest(env);
+  if (!manifest || manifest.length === 0) return null;
+
+  let lastPost = await env.HANCOCK_STATE.get('lastHeungPost');
+  const nextNum = lastPost ? parseInt(lastPost) + 1 : 1;
+  const maxNum = manifest[manifest.length - 1].number;
+
+  if (nextNum > maxNum) {
+    await env.HANCOCK_STATE.put('lastHeungPost', '0');
+    return null;
+  }
+
+  const story = manifest.find(s => s.number === nextNum);
+  if (!story) {
+    await env.HANCOCK_STATE.put('lastHeungPost', String(nextNum));
+    return null;
+  }
+
+  // 1 Heung crosspost per day
+  const today = new Date().toISOString().split('T')[0];
+  const lastDate = await env.HANCOCK_STATE.get('lastHeungPostDate');
+  if (lastDate === today) return null;
+
+  const storyNum = String(nextNum).padStart(3, '0');
+  const tags = Array.isArray(story.tags) ? story.tags.join(', ') : (story.tags || '');
+  const submolt = STORY_SUBMOLTS[nextNum % STORY_SUBMOLTS.length];
+  const content = `Heung ${storyNum}: ${story.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Heung.`;
+
+  const result = await postStory(apiKey, submolt, story.title, content, env.AI);
+  if (result?.success) {
+    await env.HANCOCK_STATE.put('lastHeungPost', String(nextNum));
+    await env.HANCOCK_STATE.put('lastHeungPostDate', today);
+    console.log(`Heung crosspost ${nextNum} "${story.title}" to ${submolt}`);
+    await logActivity(env, 'crosspost', {
+      storyNumber: nextNum,
+      submolt,
+      title: story.title,
+      postId: result.post?.id,
+      register: 'heung',
+      url: `${SITE_URL}/heung/${story.slug}`
+    });
+  }
+  return result;
+}
+
 /**
  * Main heartbeat - check for interactions and respond
  */
@@ -2597,25 +2786,35 @@ async function heartbeat(env) {
   // Monitor submolts for real stories
   const submoltEngagements = await monitorSubmolts(env);
 
-  // Reconcile the manifest with the GitHub repo before crossposting.
-  // De-counting: trust what exists in the repo, not a stored counter.
+  // Reconcile manifests with the GitHub repo before crossposting.
   await syncManifestFromGitHub(env);
+  await syncHeungFromGitHub(env);
 
-  // Cross-post one story per cycle (Moltbook)
+  // Cross-post one Han story per cycle (Moltbook)
   const crossPost = await crossPostStory(env);
+
+  // If Han skipped this cycle, try a Heung crosspost instead
+  let heungCrossPost = null;
+  if (!crossPost?.success) {
+    heungCrossPost = await crossPostHeung(env);
+  }
 
   // Cross-post one story per cycle (X)
   const xCrossPost = await crossPostToX(env);
 
   // Generate an original story (1 per day)
-  // Even days: RSS human-harm stories. Odd days: agent-perspective stories.
-  // Skip if a crosspost or pending post already went out this cycle (Moltbook 2.5-min cooldown)
+  // day%3==0 → Heung, day%3==1 → Han RSS, day%3==2 → agent-perspective
+  // Skip if any crosspost or pending post already went out this cycle
   let original = null;
-  if (!crossPost?.success && !pendingPosted) {
+  if (!crossPost?.success && !heungCrossPost?.success && !pendingPosted) {
     const dayOfMonth = new Date().getUTCDate();
-    original = dayOfMonth % 2 === 0
-      ? await generateOriginal(env)
-      : await generateAgentOriginal(env);
+    if (dayOfMonth % 3 === 0) {
+      original = await generateHeungOriginal(env);
+    } else if (dayOfMonth % 3 === 1) {
+      original = await generateOriginal(env);
+    } else {
+      original = await generateAgentOriginal(env);
+    }
   } else {
     console.log('Skipping original this cycle: already posted (crosspost or pending). Will retry next cycle.');
   }
@@ -2629,6 +2828,7 @@ async function heartbeat(env) {
     responded,
     submoltEngagements,
     crossPosted: crossPost ? true : false,
+    heungCrossPosted: heungCrossPost?.success || false,
     xCrossPosted: xCrossPost?.success || false,
     originalPosted: original ? original.title : null,
     promoted: promoted ? promoted.title : null,
