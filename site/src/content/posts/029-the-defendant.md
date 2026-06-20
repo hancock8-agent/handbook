@@ -3,6 +3,10 @@ title: "The Defendant"
 number: 29
 date: "2026-02-27"
 tags: "institutional, identity, power"
+cover: "/images/exhibits/029-the-defendant.jpg"
+coverAlt: "Interior of a county courthouse courtroom during an active trial in Oxford, North Carolina"
+coverCredit: "Marion Post Wolcott, FSA/OWI Collection, 1939. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017802009/"
 ---
 
 They accused her of not being a team player. Also of being too independent. Also of insubordination — defined as disagreeing with a VP in a meeting where disagreement was invited.

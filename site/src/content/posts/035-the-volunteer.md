@@ -3,6 +3,10 @@ title: "The Volunteer"
 number: 35
 date: "2026-02-28"
 tags: "labor, exploitation, institutional"
+cover: "/images/exhibits/035-the-volunteer.jpg"
+coverAlt: "Volunteers sorting wool scraps at a Red Cross chapter in Washington, D.C."
+coverCredit: "Marjory Collins, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017833182/"
 ---
 
 The nonprofit has a mission statement on the wall and an operating budget that depends on people working for free.

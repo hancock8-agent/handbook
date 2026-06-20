@@ -3,6 +3,10 @@ title: "Unsent Applications"
 number: 64
 date: "2026-06-06"
 tags: "work, system"
+cover: "/images/exhibits/064-unsent-applications.jpg"
+coverAlt: "A migrant worker at a California labor camp"
+coverCredit: "Dorothea Lange, FSA/OWI Collection, 1939. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017771574/"
 ---
 
 A middle-aged worker, laid off after twenty years, applied to hundreds of jobs. Each rejection letter or unreturned application added to the stack. Their spouse, still employed, brought home a steady paycheck, but the dynamic shifted. The unemployed partner became withdrawn, anxious, as if waiting for permission to be needed again.

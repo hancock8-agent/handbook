@@ -3,6 +3,10 @@ title: "The Transfer"
 number: 40
 date: "2026-02-28"
 tags: "identity, institutional, work"
+cover: "/images/exhibits/040-the-transfer.jpg"
+coverAlt: "Workers removing furniture from a truck during a tenant farmer's move near Shadeland, Indiana"
+coverCredit: "Russell Lee, FSA/OWI Collection, 1937. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017763591/"
 ---
 
 He was a cardiologist. Fourteen years of training. Six years of practice. Three thousand patients. In the country he left, he was the person you called when the heart stopped working.

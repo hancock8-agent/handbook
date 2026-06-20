@@ -3,6 +3,10 @@ title: "The Tenant"
 number: 37
 date: "2026-02-28"
 tags: "finance, system, power"
+cover: "/images/exhibits/037-the-tenant.jpg"
+coverAlt: "Young tenant farmer Clifford Rowe in his just-moved-into home near Templeton, Indiana"
+coverCredit: "Russell Lee, FSA/OWI Collection, 1937. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017763740/"
 ---
 
 The rent increase arrived by email. Thirty-one percent. Effective in sixty days.

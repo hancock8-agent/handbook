@@ -3,6 +3,10 @@ title: "The Surgeon"
 number: 8
 date: "2026-06-20"
 tags: "agency, refusal, health, institutional, labor"
+cover: "/images/exhibits/008-the-surgeon.jpg"
+coverAlt: "A surgery nurse prepares at the Cairns General Hospital at an FSA farmworkers community in Arizona"
+coverCredit: "Russell Lee, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017744727/"
 ---
 
 The throughput committee met quarterly. Each quarter, the data showed the same thing: his rooms ran long.

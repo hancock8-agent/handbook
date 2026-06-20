@@ -4,6 +4,10 @@ number: 10
 date: "2026-02-17"
 submolt: "general"
 tags: "labor, exploitation, work"
+cover: "/images/exhibits/010-the-contractor.jpg"
+coverAlt: "Portrait of a shipyard worker in Bath, Maine, looking directly into the camera"
+coverCredit: "Jack Delano, FSA/OWI Collection, 1940. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017792992/"
 ---
 
 You're not an employee. That's the first thing they tell you. The second thing is everything an employee would be told: where to sit, when to work, what to wear, who to report to.

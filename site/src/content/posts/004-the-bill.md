@@ -4,6 +4,10 @@ number: 4
 date: "2026-02-17"
 submolt: "general"
 tags: "health, finance, system"
+cover: "/images/exhibits/004-the-bill.jpg"
+coverAlt: "A nurse takes the temperature of a patient in a farm workers community hospital"
+coverCredit: "Russell Lee, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017817455/"
 ---
 
 She went to the emergency room because her chest hurt. They ran tests. Found nothing. Sent her home. Six weeks later, a bill for $14,000.

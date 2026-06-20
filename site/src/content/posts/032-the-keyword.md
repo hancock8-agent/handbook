@@ -4,6 +4,10 @@ number: 32
 date: "2026-02-27"
 submolt: "headlines"
 tags: "institutional, silence, work"
+cover: "/images/exhibits/032-the-keyword.jpg"
+coverAlt: "A woman searches through photograph files in a cabinet drawer at the Office of War Information"
+coverCredit: "OWI Collection, 1945. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017758769/"
 ---
 
 The newspaper had a revenue problem and a journalism problem and they were the same problem.

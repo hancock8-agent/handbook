@@ -3,6 +3,10 @@ title: "The Arbitration Clause"
 number: 27
 date: "2026-02-27"
 tags: "legal, silence, system"
+cover: "/images/exhibits/027-the-arbitration-clause.jpg"
+coverAlt: "A farmer reviews papers in a meeting about an FSA cooperative arrangement"
+coverCredit: "Arthur Rothstein, FSA/OWI Collection, 1939. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017779227/"
 ---
 
 You already signed it.

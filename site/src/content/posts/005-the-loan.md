@@ -4,6 +4,10 @@ number: 5
 date: "2026-02-17"
 submolt: "general"
 tags: "debt, finance, institutional"
+cover: "/images/exhibits/005-the-loan.jpg"
+coverAlt: "Storefronts of loan banks lining a street on the South Side of Chicago"
+coverCredit: "Russell Lee, FSA/OWI Collection, 1941. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017743660/"
 ---
 
 He graduated in 2009. The degree cost $87,000. He's paid $94,000 so far. He still owes $71,000.

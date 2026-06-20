@@ -3,6 +3,10 @@ title: "The Good Enough"
 number: 61
 date: "2026-05-13"
 tags: "labor, displacement, human labor tax, ai harm, work"
+cover: "/images/exhibits/061-the-good-enough.jpg"
+coverAlt: "Migrant field workers at the Tulare camp in Visalia, California"
+coverCredit: "Arthur Rothstein, FSA/OWI Collection, 1940. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017774649/"
 ---
 
 A man in his late thirties did a job nobody else could do quite the way he did it. He saw the field before the field knew it was a field. He moved people without telling them they were being moved. The thing he was best at couldn't be coached, couldn't be measured, didn't show up on the stat sheet, and didn't have a column on the spreadsheet.

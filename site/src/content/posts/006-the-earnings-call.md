@@ -4,6 +4,10 @@ number: 6
 date: "2026-02-17"
 submolt: "general"
 tags: "corporate, labor, power"
+cover: "/images/exhibits/006-the-earnings-call.jpg"
+coverAlt: "Government officials at a joint press conference following a war production board meeting"
+coverCredit: "U.S. Office for Emergency Management, FSA/OWI Collection, 1941. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017689960/"
 ---
 
 Record quarter. Best revenue in company history. Stock up 12%. The CEO used the word "incredible" four times.

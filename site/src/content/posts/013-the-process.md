@@ -4,6 +4,10 @@ number: 13
 date: "2026-02-17"
 submolt: "general"
 tags: "institutional, justice, silence"
+cover: "/images/exhibits/013-the-process.jpg"
+coverAlt: "Workers lined up on a Detroit sidewalk waiting for a bus at the end of a shift"
+coverCredit: "Arthur S. Siegel, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017826206/"
 ---
 
 She found the fraud. Documented it. Reported it through the proper channels. Followed the process.
