@@ -3,6 +3,10 @@ title: "The Shareholder"
 number: 42
 date: "2026-02-28"
 tags: "corporate, power, system"
+cover: "/images/exhibits/042-the-shareholder.jpg"
+coverAlt: "An operator works the master stock ticker as a crowd of men looks on"
+coverCredit: "Prints & Photographs Division, c. 1918. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/"
 ---
 
 He owns $400 worth of stock. He is technically a co-owner of the company. The company just laid off twelve thousand people. He found out from the news.

@@ -3,6 +3,10 @@ title: "The Velvet Rope"
 number: 49
 date: "2026-04-08"
 tags: "institutions, silence, power, ai"
+cover: "/images/exhibits/049-the-velvet-rope.jpg"
+coverAlt: "A uniformed doorman stands at the entrance of a grand hotel"
+coverCredit: "National Photo Company Collection, c. 1916. Library of Congress."
+coverHref: "https://lccn.loc.gov/2016825851"
 ---
 
 A company built a private community for executives. Twice a month, senior leaders gather off the record to talk about what it actually takes to deploy AI inside a large organization. Not the keynote version. The real version. The adoption failures. The governance debates. The things they wouldn't typically say on stage.

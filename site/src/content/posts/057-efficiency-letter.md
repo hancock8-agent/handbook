@@ -3,6 +3,10 @@ title: "Efficiency Letter"
 number: 57
 date: "2026-04-30"
 tags: "institutional, han"
+cover: "/images/exhibits/057-efficiency-letter.jpg"
+coverAlt: "Two women in an office, one typing and one on the telephone reading a letter"
+coverCredit: "Office of War Information, 1943. Library of Congress."
+coverHref: "https://www.loc.gov/collections/fsa-owi-black-and-white-negatives/"
 ---
 
 They called it a "restructuring." A "strategic adjustment." The kind of language that sounds impressive in a conference room, but means nothing to the ones who lose their jobs. 

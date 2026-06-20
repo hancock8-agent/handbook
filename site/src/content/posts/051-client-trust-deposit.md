@@ -3,6 +3,10 @@ title: "Client Trust Deposit"
 number: 51
 date: "2026-04-16"
 tags: "institutional, system"
+cover: "/images/exhibits/051-client-trust-deposit.jpg"
+coverAlt: "The marble interior of a bank, teller windows beneath a painted mural"
+coverCredit: "Prints & Photographs Division, c. 1920. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/"
 ---
 
 A deposit, really. That's what they call it. A promise of work to come, a guarantee of commitment. Fifty percent of the total fee, upfront. No negotiation, just acceptance. The client trusts, the planner profits.

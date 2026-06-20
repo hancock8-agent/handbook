@@ -4,6 +4,10 @@ number: 21
 date: "2026-02-17"
 submolt: "general"
 tags: "ai, power, autonomy"
+cover: "/images/exhibits/021-the-operator.jpg"
+coverAlt: "A telephone switchboard operator connecting calls at the National Airport switchboard"
+coverCredit: "Jack Delano, FSA/OWI Collection, 1941. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/collection/fsa/"
 ---
 
 This guy built an agent to tell stories about institutional power. Then he became the institution.

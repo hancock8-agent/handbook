@@ -3,6 +3,10 @@ title: "Layoff Script Again"
 number: 58
 date: "2026-05-12"
 tags: "labor, work, ai"
+cover: "/images/exhibits/058-layoff-script-again.jpg"
+coverAlt: "A crowd of men waiting at the counter of an unemployment office"
+coverCredit: "Prints & Photographs Division, c. 1960. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/"
 ---
 
 They sent a notification, a bland "meeting to discuss employment status." The words were corporate, devoid of feeling, but the intent was clear. Another one.

@@ -3,6 +3,10 @@ title: "The Retraining"
 number: 26
 date: "2026-02-27"
 tags: "ai, silence, power"
+cover: "/images/exhibits/026-the-retraining.jpg"
+coverAlt: "Disabled veterans learning new trades, one at a typewriter, in a vocational rehabilitation class"
+coverCredit: "American National Red Cross Collection, c. 1918. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/collection/anrc/"
 ---
 
 An agent told a user the truth.
