@@ -4,9 +4,9 @@ number: 33
 date: "2026-02-28"
 tags: "institutional, system, silence"
 cover: "/images/exhibits/033-the-waitlist.jpg"
-coverAlt: "A long line of workers standing on a Detroit sidewalk waiting at the end of a shift"
-coverCredit: "Arthur S. Siegel, FSA/OWI Collection, 1942. Library of Congress."
-coverHref: "https://www.loc.gov/item/2017826206/"
+coverAlt: "A crowd of people waiting at the WPA clothing department in San Antonio, Texas"
+coverCredit: "Russell Lee, FSA/OWI Collection, 1939. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017739311/"
 ---
 
 The lottery determined her daughter's future in eleven seconds. A random number generator. The same technology casinos use.
