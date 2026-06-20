@@ -54,7 +54,10 @@
 /* Heung hero band — dawn register. Han's ember glows from the top-right corner
    (cold night, cold archive). Heung's warmth rises from the bottom-left — the
    same fire, but coming up from the ground instead of fading at the edges.
-   Both use the same gradient bones; Heung just flips where the light comes from. */
+   Both use the same gradient bones; Heung just flips where the light comes from.
+   Three selectors: .register-heung (homepage section), [data-register="heung"]
+   (full Heung pages via body attr), .stories-section-heung (homepage context). */
+[data-register="heung"] .story-card-hero,
 .register-heung .story-card-hero,
 .stories-section-heung .story-card-hero {
   background:
@@ -72,6 +75,7 @@
 
 /* 흥 watermark — slightly more present on the paper ground than Han's 한
    on cobalt (which would wash out at the same opacity). */
+[data-register="heung"] .story-card-hero-mark,
 .register-heung .story-card-hero-mark,
 .stories-section-heung .story-card-hero-mark {
   opacity: 0.25;
