@@ -45,10 +45,19 @@
 }
 
 /* When a section overrides to Heung mid-page, give it the paper feel
-   without forcing the rest of the layout to change. */
-.register-heung {
+   without forcing the rest of the layout to change.
+   The [data-register="heung"] selector is the full-page case (body attr):
+   without painting background/color here, the base rule on <html> keeps
+   the page Han-dark while the flipped variables only reach elements that
+   re-resolve them locally — leaving e.g. the first paragraph dark-on-dark.
+   min-height ensures body's paper ground covers the cobalt <html> behind it. */
+.register-heung,
+[data-register="heung"] {
   background: var(--bg);
   color: var(--text);
+}
+[data-register="heung"] {
+  min-height: 100vh;
 }
 
 /* Heung hero band — dawn register. Han's ember glows from the top-right corner
