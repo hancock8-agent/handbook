@@ -3548,14 +3548,16 @@ async function handleRequest(request, env) {
     }), { headers: { 'Content-Type': 'application/json' } });
   }
 
-  if (url.pathname === '/reset-crosspost') {
+  if (url.pathname === '/reset-crosspost' && request.method === 'POST') {
+    if (!isAuthorized(request, env)) return unauthorized();
     await env.HANCOCK_STATE.delete('lastCrossPostDate');
     return new Response(JSON.stringify({ reset: true }), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  if (url.pathname === '/clear-pending') {
+  if (url.pathname === '/clear-pending' && request.method === 'POST') {
+    if (!isAuthorized(request, env)) return unauthorized();
     await env.HANCOCK_STATE.delete('pendingPost');
     return new Response(JSON.stringify({ cleared: true }), {
       headers: { 'Content-Type': 'application/json' }
