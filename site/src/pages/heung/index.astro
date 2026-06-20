@@ -22,7 +22,7 @@ function getOpener(body: string | undefined): string {
 
   <section class="stories-section">
     <div class="stories-label">{totalCount} {totalCount === 1 ? 'piece' : 'pieces'}</div>
-    <div class="story-grid">
+    <div class="story-grid story-grid-heung">
       {pieces.map((piece, i) => {
         const num = String(piece.data.number).padStart(3, '0');
         const opener = getOpener(piece.body);
@@ -55,4 +55,16 @@ function getOpener(body: string | undefined): string {
       })}
     </div>
   </section>
+
+  <style>
+    /* Accent left-rule on cards — same as the homepage Heung section. */
+    .story-grid-heung :global(.story-card) {
+      border: 1px solid var(--rule-light);
+      border-left: 2px solid var(--accent);
+    }
+    .story-grid-heung :global(.story-card:hover) {
+      border-color: var(--accent-dim);
+      border-left-color: var(--accent-hover);
+    }
+  </style>
 </Base>

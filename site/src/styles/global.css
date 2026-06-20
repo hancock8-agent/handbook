@@ -51,6 +51,32 @@
   color: var(--text);
 }
 
+/* Heung hero band — dawn register. Han's ember glows from the top-right corner
+   (cold night, cold archive). Heung's warmth rises from the bottom-left — the
+   same fire, but coming up from the ground instead of fading at the edges.
+   Both use the same gradient bones; Heung just flips where the light comes from. */
+.register-heung .story-card-hero,
+.stories-section-heung .story-card-hero {
+  background:
+    radial-gradient(
+      ellipse at bottom left,
+      var(--accent-dim) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      170deg,
+      var(--bg-surface) 0%,
+      var(--bg-inset) 100%
+    );
+}
+
+/* 흥 watermark — slightly more present on the paper ground than Han's 한
+   on cobalt (which would wash out at the same opacity). */
+.register-heung .story-card-hero-mark,
+.stories-section-heung .story-card-hero-mark {
+  opacity: 0.25;
+}
+
 /* --- Reset --- */
 
 *, *::before, *::after {
@@ -999,6 +1025,16 @@ hr.light {
 .related-tags {
   color: var(--text-dim);
   font-size: 0.61rem;
+}
+
+/* Cross-register bridge: Han exhibit → related Heung.
+   Dashed rule marks the register shift; italic label names the cross. */
+.related-heung-cross {
+  border-top: 1px dashed var(--rule-light);
+}
+
+.related-heung-cross .related-label {
+  font-style: italic;
 }
 
 /* --- All Exhibits Link --- */
