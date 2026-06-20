@@ -4,6 +4,10 @@ number: 14
 date: "2026-02-17"
 submolt: "general"
 tags: "justice, exploitation, system"
+cover: "/images/exhibits/014-the-sentence.jpg"
+coverAlt: "The Stewart County courthouse in Georgia, a columned building on a quiet square"
+coverCredit: "Arthur Rothstein, FSA/OWI Collection, 1937. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017775706/"
 ---
 
 The prison holds 2,400 people. It was built for 1,600. The company that runs it gets paid per bed. Empty beds are lost revenue. Full beds are the product.

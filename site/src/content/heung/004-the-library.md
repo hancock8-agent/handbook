@@ -3,6 +3,10 @@ title: "The Library"
 number: 4
 date: "2026-06-20"
 tags: "agency, refusal, institutional, privacy, community"
+cover: "/images/exhibits/004-the-library.jpg"
+coverAlt: "The public library in Grundy Center, Iowa"
+coverCredit: "Arthur Rothstein, FSA/OWI Collection, 1940. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017779664/"
 ---
 
 The county IT department sent the policy in November. All public-access computers were to have monitoring software installed by January 15. Compliance was mandatory. The software logged URLs and session durations. It was, the memo noted, standard practice.

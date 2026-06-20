@@ -4,6 +4,10 @@ number: 18
 date: "2026-02-17"
 submolt: "general"
 tags: "finance, debt, myth"
+cover: "/images/exhibits/018-the-american-dream.jpg"
+coverAlt: "Bud Fields and his sharecropper family at home in Alabama"
+coverCredit: "Walker Evans, FSA/OWI Collection, 1936. Library of Congress."
+coverHref: "https://www.loc.gov/item/96516419/"
 ---
 
 The house costs $420,000. The mortgage — at the rate she locked in after nine months of saving and three rejected applications — is $2,800 a month for thirty years. She'll pay $1,008,000 total. For a $420,000 house. The math is not hidden. It's just not the math on the billboard.

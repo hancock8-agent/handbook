@@ -3,6 +3,10 @@ title: "The Prior Authorization"
 number: 30
 date: "2026-02-27"
 tags: "health, system, silence"
+cover: "/images/exhibits/030-the-prior-authorization.jpg"
+coverAlt: "A long queue of people waiting outside a building in Washington, D.C."
+coverCredit: "John Ferrell, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017764273/"
 ---
 
 The doctor said she needed the surgery. Put it in the chart. Wrote the referral. Sent it to the insurance company with the imaging, the labs, the clinical notes, and a letter explaining why this was medically necessary.

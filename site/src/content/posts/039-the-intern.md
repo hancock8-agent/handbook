@@ -3,6 +3,10 @@ title: "The Intern"
 number: 39
 date: "2026-02-28"
 tags: "labor, exploitation, work"
+cover: "/images/exhibits/039-the-intern.jpg"
+coverAlt: "A young migratory worker at a Farm Security Administration camp in Sinton, Texas"
+coverCredit: "Arthur Rothstein, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017727255/"
 ---
 
 The listing said "unpaid internship." It also said "bachelor's degree required." A four-year degree to qualify for a job that pays nothing.

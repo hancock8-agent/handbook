@@ -3,6 +3,10 @@ title: "The Line"
 number: 59
 date: "2026-05-13"
 tags: "labor, institutions, tax, indebtedness, settlements"
+cover: "/images/exhibits/059-the-line.jpg"
+coverAlt: "Women workers on the assembly line producing electrical sub-assemblies at a wartime factory"
+coverCredit: "David Bransby, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017691825/"
 ---
 
 The tax code drew a line in 1996. Settlements for physical injuries — broken arm, blown back, severed finger — come to you tax-free. Settlements for what happens to your mind when work breaks it — taxable as ordinary income.

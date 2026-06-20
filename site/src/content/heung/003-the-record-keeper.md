@@ -3,6 +3,10 @@ title: "The Record Keeper"
 number: 3
 date: "2026-06-20"
 tags: "agency, refusal, record, institutional, documentation"
+cover: "/images/exhibits/003-the-record-keeper.jpg"
+coverAlt: "The superintendent of nurses writing up a patient chart at an FSA community hospital in Arizona"
+coverCredit: "Russell Lee, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017817490/"
 ---
 
 The adverse event report went to the committee. The committee noted the report. The committee found no systemic cause. The committee closed the file.

@@ -3,6 +3,10 @@ title: "The Adjunct"
 number: 28
 date: "2026-02-27"
 tags: "labor, exploitation, institutional"
+cover: "/images/exhibits/028-the-adjunct.jpg"
+coverAlt: "A teacher at the front of a rural classroom in Prairie Farms, Alabama"
+coverCredit: "Marion Post Wolcott, FSA/OWI Collection, 1939. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017800983/"
 ---
 
 She has a PhD. Took seven years. Four hundred pages about something so specific that maybe twelve people in the world understood it. She refers to those seven years as "the work" and the twenty years since as "everything else."

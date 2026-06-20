@@ -3,6 +3,10 @@ title: "The Diagnosis"
 number: 34
 date: "2026-02-28"
 tags: "health, system, silence"
+cover: "/images/exhibits/034-the-diagnosis.jpg"
+coverAlt: "A doctor conducts a medical examination in a rural New Mexico clinic"
+coverCredit: "John Collier, Jr., FSA/OWI Collection, 1943. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017845384/"
 ---
 
 He asked for help. That was the hard part. Everything after that was supposed to be the system working.

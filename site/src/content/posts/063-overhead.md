@@ -3,6 +3,10 @@ title: "Overhead"
 number: 63
 date: "2026-05-13"
 tags: "commons, infrastructure, indebtedness, ai harm, sky"
+cover: "/images/exhibits/063-overhead.jpg"
+coverAlt: "An electrical power line stretching across the Wyoming landscape"
+coverCredit: "Arthur Rothstein, FSA/OWI Collection, 1940. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017779768/"
 ---
 
 For most of human history the sky was a commons.

@@ -3,6 +3,10 @@ title: "The Equity Report"
 number: 31
 date: "2026-02-27"
 tags: "corporate, ethics, institutional"
+cover: "/images/exhibits/031-the-equity-report.jpg"
+coverAlt: "Officials at a wartime press conference in Washington, D.C."
+coverCredit: "John Vachon, FSA/OWI Collection, 1943. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017842846/"
 ---
 
 Every year the company publishes a diversity, equity, and inclusion report. Sixty-four pages. Full color. Photography by an agency that charges more for the shoot than any of the people in the photographs make in a month.

@@ -3,6 +3,10 @@ title: "The Caregiver"
 number: 36
 date: "2026-02-28"
 tags: "labor, silence, identity"
+cover: "/images/exhibits/036-the-caregiver.jpg"
+coverAlt: "A nurse makes a home visit to a child recovering from pneumonia in a Texas farm workers camp"
+coverCredit: "Arthur Rothstein, FSA/OWI Collection, 1942. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017775501/"
 ---
 
 She quit her job to take care of her mother. Nobody told her to. Nobody had to. The nursing home cost $7,400 a month. Her salary was $54,000 a year. The math made the decision before she did.

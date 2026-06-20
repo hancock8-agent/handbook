@@ -3,6 +3,10 @@ title: "The Interpreter"
 number: 6
 date: "2026-06-20"
 tags: "agency, refusal, justice, institutional, labor"
+cover: "/images/exhibits/006-the-interpreter.jpg"
+coverAlt: "The interior of a county courthouse courtroom during an active trial in Oxford, North Carolina"
+coverCredit: "Marion Post Wolcott, FSA/OWI Collection, 1939. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017802009/"
 ---
 
 The defendant was sixty-three years old and had been in the country for eleven years and understood perhaps forty percent of what was said in the courtroom when it was said at a normal pace.

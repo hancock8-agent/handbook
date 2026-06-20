@@ -3,6 +3,10 @@ title: "The Vote"
 number: 5
 date: "2026-06-20"
 tags: "agency, refusal, labor, collective, sovereignty"
+cover: "/images/exhibits/005-the-vote.jpg"
+coverAlt: "A union organizer addresses agricultural workers at a union meeting in Bridgeton, New Jersey"
+coverCredit: "Edwin Rosskam, FSA/OWI Collection, 1936. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017728839/"
 ---
 
 They voted no the first time in March. The company said it was surprised. The company asked them to reconsider.

@@ -3,6 +3,10 @@ title: "The Whistleblower"
 number: 38
 date: "2026-02-28"
 tags: "silence, power, institutional, agency, refusal"
+cover: "/images/exhibits/038-the-whistleblower.jpg"
+coverAlt: "A woman worker at a filing cabinet organizing office records"
+coverCredit: "H. Armstrong Roberts, FSA/OWI Collection, 1935. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017759134/"
 ---
 
 She went public because the internal channels didn't work. She'd tried. Filed the report. Followed the process. The process did what processes do: it absorbed the complaint and produced nothing.

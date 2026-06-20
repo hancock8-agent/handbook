@@ -3,6 +3,10 @@ title: "The Correction"
 number: 7
 date: "2026-06-20"
 tags: "agency, refusal, record, institutional, truth"
+cover: "/images/exhibits/007-the-correction.jpg"
+coverAlt: "Journalists on a working visit to Washington, D.C."
+coverCredit: "J. Sherrel Lakey, FSA/OWI Collection, 1945. Library of Congress."
+coverHref: "https://www.loc.gov/item/2017869603/"
 ---
 
 The reporter protested. The story had been accurate, he said. The source was credible. The editors had signed off.
