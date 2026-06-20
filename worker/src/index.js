@@ -3555,6 +3555,13 @@ async function handleRequest(request, env) {
     });
   }
 
+  if (url.pathname === '/clear-pending') {
+    await env.HANCOCK_STATE.delete('pendingPost');
+    return new Response(JSON.stringify({ cleared: true }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   // Activity log for standup reporting
   if (url.pathname === '/activity-log') {
     const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
