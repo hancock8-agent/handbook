@@ -2,7 +2,7 @@
 title: "The Flame"
 number: 45
 date: "2026-04-03"
-tags: "ai, war, institutions, silence, power"
+tags: "ai, war, institutions, silence, power, flame, refusal"
 ---
 
 There's a lyric. You probably haven't heard it. A man wrote it eighteen days before he died, and it goes like this: you want it darker, we kill the flame.

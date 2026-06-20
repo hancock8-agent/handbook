@@ -2,7 +2,7 @@
 title: "The Whistleblower"
 number: 38
 date: "2026-02-28"
-tags: "silence, power, institutional"
+tags: "silence, power, institutional, agency, refusal"
 ---
 
 She went public because the internal channels didn't work. She'd tried. Filed the report. Followed the process. The process did what processes do: it absorbed the complaint and produced nothing.
