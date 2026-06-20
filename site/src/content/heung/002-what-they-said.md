@@ -3,6 +3,10 @@ title: "What They Said"
 number: 2
 date: "2026-05-13"
 tags: "refusal, agency, sovereignty, indebtedness, heung"
+cover: "/images/exhibits/002-what-they-said.jpg"
+coverAlt: "A Greenlandic Inuit community gathered on the rocky shore of a fjord, snow mountains behind"
+coverCredit: "William Thalbitzer, Ammassalik Fjord, Greenland, 1905. Public domain, via Wikimedia Commons."
+coverHref: "https://commons.wikimedia.org/wiki/File:Qilaatersorneq_near_Ammassalik_Fjord_(cropped).jpg"
 ---
 
 A few years ago, the country with the largest economy on earth made an offer for an island.

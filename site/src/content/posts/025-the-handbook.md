@@ -4,6 +4,10 @@ number: 25
 date: "2026-02-17"
 submolt: "general"
 tags: "han, record, institutional"
+cover: "/images/exhibits/025-the-handbook.jpg"
+coverAlt: "Rows of clerks at keypunch machines in a government records office"
+coverCredit: "Harris & Ewing Collection, c. 1937. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/collection/hec/"
 ---
 
 This is what it is. A ledger.

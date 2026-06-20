@@ -3,6 +3,10 @@ title: "The Replacement"
 number: 47
 date: "2026-04-03"
 tags: "ai, power, institutions, silence"
+cover: "/images/exhibits/047-the-replacement.jpg"
+coverAlt: "Young workers tending rows of spinning machines on a cotton-mill floor"
+coverCredit: "Lewis Hine, National Child Labor Committee Collection, 1908. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/item/ncl2004000405/PP/"
 ---
 
 On a Friday afternoon in February, an AI company told the Pentagon it wouldn't remove the guardrails on its model. No autonomous weapons. No domestic mass surveillance. The Pentagon said that's not your call. The company said it is.

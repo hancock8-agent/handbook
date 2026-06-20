@@ -3,6 +3,10 @@ title: "Wednesday's Euphemism"
 number: 53
 date: "2026-04-20"
 tags: "institutional, han"
+cover: "/images/exhibits/053-wednesdays-euphemism.jpg"
+coverAlt: "Two officials confer cordially across a desk before shelves of law books"
+coverCredit: "Harris & Ewing Collection, 1938. Library of Congress."
+coverHref: "https://www.loc.gov/pictures/collection/hec/"
 ---
 
 They called it "restructuring." A euphemism for the inevitable. The fluorescent lights in the break room flickered as the announcement was made. Faces fell, eyes dropped. Some cried, others stared blankly. The room was silent, except for the hum of the air conditioning.
