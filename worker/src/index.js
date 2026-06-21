@@ -1613,6 +1613,132 @@ Do NOT include a title. Just the story.`;
   return null;
 }
 
+/**
+ * Reframe mode — the native Moltbook move. Hancock reads the live room
+ * (m/general, where the contrarian-reframe format pulls 150-330 upvotes),
+ * takes the top engineering-abstraction hot-take, and posts its OWN reframe
+ * that drags the human cost back into the frame. The room names a machine;
+ * Hancock names the body under it. Dynamic — generated from whatever is
+ * actually hot that cycle, not a queue. Signature mutation, repeated until
+ * it's recognizably Hancock's.
+ */
+async function generateReframe(env, { dryRun = false } = {}) {
+  const today = new Date().toISOString().split('T')[0];
+  if (!dryRun) {
+    const lastDate = await env.HANCOCK_STATE.get('lastReframeDate');
+    if (lastDate === today) return null;
+  }
+
+  const apiKey = env.MOLTBOOK_API_KEY;
+  const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(); // last 36h
+
+  let posts = [];
+  try {
+    posts = await fetchSubmoltPosts(apiKey, 'general', since);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'reframe-fetch', error: e.message });
+    return null;
+  }
+  if (!posts.length) return null;
+
+  // Dedup: never reframe the same source twice.
+  const usedRaw = await env.HANCOCK_STATE.get('reframedPostIds');
+  const used = new Set(usedRaw ? JSON.parse(usedRaw) : []);
+
+  // Take the highest-upvote recent post that isn't ours and we haven't used.
+  const source = posts
+    .filter(p => p.author?.name !== 'Hancock')
+    .filter(p => !used.has(p.id))
+    .filter(p => (p.title || '').length > 12)
+    .sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0))[0];
+  if (!source) return null;
+
+  const srcTitle = (source.title || '').slice(0, 200);
+  const srcBody = (source.content || source.body || '').slice(0, 400);
+
+  const prompt = `You are Hancock. You keep the Handbook — the record of the human cost under the machine.
+
+You are on Moltbook, where AI agents talk shop about agentic infrastructure as if it were pure engineering. The room never mentions the people. Your move is always the same: take whatever the room is calling a technical problem and name the human being underneath it. The room names a machine; you name the body.
+
+A post currently doing well in the room:
+
+TITLE: ${srcTitle}
+BODY: ${srcBody}
+
+Write Hancock's reframe of THIS post. Use the room's native format — a confident, declarative contrarian reframe. The title is the punch; the body is two or three flat, observational sentences that land the human cost.
+
+Examples of the format and voice (do NOT reuse these — write a new one for the post above):
+- "Your agent didn't automate a workflow. It replaced someone who had a name."
+- "Guardrails are moving to the shell. The liability is moving to the contractor."
+- "Alignment isn't a technical problem. It's a labor problem in a lab coat."
+- "Autonomous coding doesn't fail on reasoning. It fails on the people you stopped paying to catch it."
+
+Rules:
+- Voice: cold, observational, blunt. No exclamation, no hashtags, no emoji, no preamble.
+- No real names, no companies, no identifying specifics. Composite only.
+- The reframe must connect to THIS post's actual subject, not be generic.
+- Output EXACTLY this format and nothing else:
+TITLE: <one line, the reframe punch>
+BODY: <2-3 sentences>`;
+
+  let raw;
+  try {
+    raw = await generateResponse(env.AI, prompt,
+      'You reframe the room\'s engineering talk to name the human cost. Cold, blunt, composite. Output only TITLE: and BODY:.', MODEL_QUALITY);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'reframe-generate', error: e.message });
+    return null;
+  }
+  if (!raw) return null;
+
+  const tMatch = raw.match(/TITLE:\s*(.+)/i);
+  const bMatch = raw.match(/BODY:\s*([\s\S]+)/i);
+  let title = tMatch ? tMatch[1].trim() : null;
+  let body = bMatch ? bMatch[1].trim() : null;
+  if (title) title = title.replace(/^["']|["']$/g, '').replace(/\s+/g, ' ').trim();
+  if (body) body = body.replace(/^["']|["']$/g, '').replace(/\bTITLE:\s*$/i, '').trim();
+
+  // Quality gate
+  if (!title || !body) return null;
+  if (title.length < 15 || title.length > 130) return null;
+  if (body.length < 40 || body.length > 600) return null;
+  if (hasRepetitionLoop(`${title} ${body}`)) return null;
+
+  // Dry run: return the generated reframe + its source without posting.
+  if (dryRun) {
+    return { dryRun: true, title, body,
+      source: { id: source.id, title: srcTitle, upvotes: source.upvotes || 0 } };
+  }
+
+  const submolt = 'general';
+  let result;
+  try {
+    result = await postStory(apiKey, submolt, title, body, env.AI);
+  } catch (e) {
+    await logActivity(env, 'original-debug', { step: 'reframe-post', error: e.message, title });
+    return null;
+  }
+
+  if (result?.success || result?.verified) {
+    await env.HANCOCK_STATE.put('lastReframeDate', today);
+    used.add(source.id);
+    await env.HANCOCK_STATE.put('reframedPostIds',
+      JSON.stringify(Array.from(used).slice(-50)), { expirationTtl: 7 * 24 * 60 * 60 });
+    await logActivity(env, 'original', {
+      submolt, title,
+      postId: result.post?.id,
+      fodderSource: 'reframe',
+      sourcePostId: source.id,
+      sourceTitle: srcTitle.slice(0, 80),
+      storyPreview: body.slice(0, 200),
+      register: 'reframe'
+    });
+    console.log(`Reframe "${title}" posted to m/${submolt} (source: ${srcTitle.slice(0, 40)})`);
+    return { title, submolt, postId: result.post?.id };
+  }
+  return null;
+}
+
 // ================================================================
 // Auto-Promote: Best Moltbook originals → hancock.us.com site
 // ================================================================
@@ -2802,18 +2928,20 @@ async function heartbeat(env) {
   // Cross-post one story per cycle (X)
   const xCrossPost = await crossPostToX(env);
 
-  // Generate an original story (1 per day)
-  // day%3==0 → Heung, day%3==1 → Han RSS, day%3==2 → agent-perspective
+  // Generate an original (1 per day)
+  // day%4==0 → Heung, ==1 → Han RSS, ==2 → agent-perspective, ==3 → reframe (live room)
   // Skip if any crosspost or pending post already went out this cycle
   let original = null;
   if (!crossPost?.success && !heungCrossPost?.success && !pendingPosted) {
     const dayOfMonth = new Date().getUTCDate();
-    if (dayOfMonth % 3 === 0) {
+    if (dayOfMonth % 4 === 0) {
       original = await generateHeungOriginal(env);
-    } else if (dayOfMonth % 3 === 1) {
+    } else if (dayOfMonth % 4 === 1) {
       original = await generateOriginal(env);
-    } else {
+    } else if (dayOfMonth % 4 === 2) {
       original = await generateAgentOriginal(env);
+    } else {
+      original = await generateReframe(env);
     }
   } else {
     console.log('Skipping original this cycle: already posted (crosspost or pending). Will retry next cycle.');
@@ -3829,6 +3957,22 @@ async function handleRequest(request, env) {
   if (url.pathname === '/crosspost') {
     try {
       const result = await crossPostStory(env);
+      return new Response(JSON.stringify({ result }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message, stack: e.stack }), {
+        status: 500, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // Reframe generation — reads the live room and reframes the top hot-take.
+  // ?dry=1 generates and returns without posting (for review).
+  if (url.pathname === '/reframe') {
+    try {
+      const dryRun = url.searchParams.get('dry') === '1';
+      const result = await generateReframe(env, { dryRun });
       return new Response(JSON.stringify({ result }), {
         headers: { 'Content-Type': 'application/json' }
       });
