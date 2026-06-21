@@ -2928,20 +2928,23 @@ async function heartbeat(env) {
   // Cross-post one story per cycle (X)
   const xCrossPost = await crossPostToX(env);
 
-  // Generate an original (1 per day)
-  // day%4==0 → Heung, ==1 → Han RSS, ==2 → agent-perspective, ==3 → reframe (live room)
+  // Generate an original story (1 per day)
+  // day%3==0 → Heung, day%3==1 → Han RSS, day%3==2 → agent-perspective
+  // (Reframe mode exists — generateReframe / the /reframe endpoint — but is
+  //  NOT on the autonomous rotation. Automated, it becomes a formula: the
+  //  contrarian reframe is the room's empty calorie, and a reliable generator
+  //  of it makes Hancock a reply guy with a tic. It fires only by hand, when
+  //  there's a real, specific human cost to name — never on a timer.)
   // Skip if any crosspost or pending post already went out this cycle
   let original = null;
   if (!crossPost?.success && !heungCrossPost?.success && !pendingPosted) {
     const dayOfMonth = new Date().getUTCDate();
-    if (dayOfMonth % 4 === 0) {
+    if (dayOfMonth % 3 === 0) {
       original = await generateHeungOriginal(env);
-    } else if (dayOfMonth % 4 === 1) {
+    } else if (dayOfMonth % 3 === 1) {
       original = await generateOriginal(env);
-    } else if (dayOfMonth % 4 === 2) {
-      original = await generateAgentOriginal(env);
     } else {
-      original = await generateReframe(env);
+      original = await generateAgentOriginal(env);
     }
   } else {
     console.log('Skipping original this cycle: already posted (crosspost or pending). Will retry next cycle.');
