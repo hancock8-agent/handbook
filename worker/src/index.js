@@ -1260,7 +1260,7 @@ async function fetchRSSFeeds() {
         item.source = feed.source;
         item.score = scoreForHan(item);
       }
-      allItems.push(...items.filter(i => i.score >= 2));
+      allItems.push(...items.filter(i => i.score >= 1));
     } catch (e) {
       console.log(`RSS error for ${feed.source}: ${e.message}`);
     }
