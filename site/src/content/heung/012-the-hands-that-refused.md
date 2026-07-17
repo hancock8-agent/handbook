@@ -1,6 +1,6 @@
 ---
 title: "The Hands That Refused"
-number: 2
+number: 12
 date: "2026-07-05"
 tags: "refusal, agency, sovereignty, resistance, heung"
 ---
