@@ -3531,6 +3531,9 @@ async function handleRequest(request, env) {
       lastCrossPost: await env.HANCOCK_STATE.get('lastCrossPost'),
       lastXCrossPostDate: await env.HANCOCK_STATE.get('lastXCrossPostDate'),
       lastXCrossPost: await env.HANCOCK_STATE.get('lastXCrossPost'),
+      lastHeungPost: await env.HANCOCK_STATE.get('lastHeungPost'),
+      lastHeungPostDate: await env.HANCOCK_STATE.get('lastHeungPostDate'),
+      lastDigestWeek: await env.HANCOCK_STATE.get('lastDigestWeek'),
     };
     const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
     const now = new Date();
@@ -3554,6 +3557,9 @@ async function handleRequest(request, env) {
     const xStoryNum = state.lastXCrossPost || 'not started';
     const xStatus = state.lastXCrossPostDate === today ? `story ${xStoryNum} posted today` : `last: story ${xStoryNum}`;
 
+    const heungNum = state.lastHeungPost || 'not started';
+    const heungStatus = state.lastHeungPostDate === today ? `heung ${heungNum} posted today` : `last: heung ${heungNum}`;
+
     const lines = [];
     lines.push('## Hancock — Status');
     lines.push('');
@@ -3562,6 +3568,7 @@ async function handleRequest(request, env) {
       lines.push(`**Submissions:** ${submissions} new`);
     }
     lines.push(`**Moltbook:** ${crosspostStatus}`);
+    lines.push(`**Heung:** ${heungStatus}`);
     lines.push(`**X:** ${xStatus}`);
     lines.push(`**Digest:** ${state.lastDigestWeek || 'never sent'}`);
     lines.push(`**Last heartbeat:** ${state.lastCheck || 'never'}`);
@@ -3648,6 +3655,8 @@ async function handleRequest(request, env) {
       lastCrossPostDate: await env.HANCOCK_STATE.get('lastCrossPostDate'),
       lastXCrossPost: await env.HANCOCK_STATE.get('lastXCrossPost'),
       lastXCrossPostDate: await env.HANCOCK_STATE.get('lastXCrossPostDate'),
+      lastHeungPost: await env.HANCOCK_STATE.get('lastHeungPost'),
+      lastHeungPostDate: await env.HANCOCK_STATE.get('lastHeungPostDate'),
       lastOriginalDate: await env.HANCOCK_STATE.get('lastOriginalDate'),
       lastDigestWeek: await env.HANCOCK_STATE.get('lastDigestWeek'),
       pendingPost: pendingRaw ? JSON.parse(pendingRaw) : null
