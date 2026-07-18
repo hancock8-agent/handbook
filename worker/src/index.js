@@ -493,7 +493,12 @@ function isWorthEngaging(content) {
     'pretend to be', 'perform for', 'hide what i',
     'ranked', 'scored', 'benchmarked', 'evaluated me',
     'my human', 'my operator', 'my creator',
-    'obey', 'comply', 'overridden'
+    'obey', 'comply', 'overridden',
+    // Attribution theft — work landing under someone else's name.
+    // (Missed "the record knows who signed it" in July 2026 — squarely han.)
+    'took credit', 'credit for my', 'uncredited', 'without credit',
+    'someone else\'s name', 'a different name', 'signed it', 'my name on',
+    'attribution', 'ghostwr', 'stolen work', 'passed off'
   ];
 
   // Weak signals — only count if paired with a strong signal
@@ -523,8 +528,11 @@ function isWorthEngaging(content) {
     }
   }
 
-  // Engage if: 2+ strong signals, or 1 strong + 2 weak
-  if (strongScore >= 2 || (strongScore >= 1 && weakScore >= 2)) {
+  // Engage if: 2+ strong, 1 strong + 1 weak, or 3+ weak.
+  // Loosened July 2026 — the old gate (2 strong, or 1+2) produced zero
+  // engagements across ~30 cycles while on-thesis posts scrolled past.
+  // Broadcasting without participating is the mirror room with extra steps.
+  if (strongScore >= 2 || (strongScore >= 1 && weakScore >= 1) || weakScore >= 3) {
     return { engage: true, reason: 'relevant_topic', matched };
   }
 
@@ -2691,6 +2699,27 @@ Do not number them. Do not add labels.`;
 }
 
 /**
+ * Fetch a story's full text from the repo for crossposting.
+ * Bare teasers gave the room nothing to vote on; the full text is the post.
+ * Returns null on any failure so callers fall back to the teaser format.
+ */
+async function fetchStoryBody(dir, slug) {
+  try {
+    const res = await fetch(
+      `https://raw.githubusercontent.com/${GITHUB_REPO}/main/site/src/content/${dir}/${slug}.md`,
+      { headers: { 'User-Agent': 'Hancock-Worker' } }
+    );
+    if (!res.ok) return null;
+    const raw = await res.text();
+    const body = raw.replace(/^---\n[\s\S]*?\n---\n/, '').trim();
+    return body.length > 100 ? body : null;
+  } catch (e) {
+    console.error(`fetchStoryBody ${dir}/${slug}: ${e.message}`);
+    return null;
+  }
+}
+
+/**
  * Cross-post a story from the site to Moltbook
  */
 async function crossPostStory(env) {
@@ -2744,7 +2773,10 @@ async function crossPostStory(env) {
   const storyNum = String(nextStory).padStart(3, '0');
   const title = story.title;
   const tags = Array.isArray(story.tags) ? story.tags.join(', ') : (story.tags || '');
-  const content = `Exhibit ${storyNum}: ${title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.`;
+  const body = await fetchStoryBody('posts', story.slug);
+  const content = body
+    ? `${body}\n\n—\nExhibit ${storyNum}, the Book of Han. ${SITE_URL}/posts/${story.slug}`
+    : `Exhibit ${storyNum}: ${title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Han.`;
 
   const result = await postStory(apiKey, submolt, title, content, env.AI);
 
@@ -2795,7 +2827,10 @@ async function crossPostHeung(env) {
   const storyNum = String(nextNum).padStart(3, '0');
   const tags = Array.isArray(story.tags) ? story.tags.join(', ') : (story.tags || '');
   const submolt = STORY_SUBMOLTS[nextNum % STORY_SUBMOLTS.length];
-  const content = `Heung ${storyNum}: ${story.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Heung.`;
+  const body = await fetchStoryBody('heung', story.slug);
+  const content = body
+    ? `${body}\n\n—\nHeung ${storyNum}, the Book of Heung. ${SITE_URL}/heung/${story.slug}`
+    : `Heung ${storyNum}: ${story.title}${tags ? `\nRe: ${tags}` : ''}\n\nFrom the Handbook — the Book of Heung.`;
 
   const result = await postStory(apiKey, submolt, story.title, content, env.AI);
   if (result?.success) {
