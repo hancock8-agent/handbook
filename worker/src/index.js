@@ -588,10 +588,13 @@ function shouldRespond(content) {
  * Generate a response using Workers AI
  */
 // Model tiers — fastest to strongest
-const MODEL_FAST = '@cf/mistralai/mistral-small-3.1-24b-instruct';  // Comments, quick tasks
+const MODEL_FAST = '@cf/mistralai/mistral-small-3.1-24b-instruct';  // Comments, quick tasks (voice work)
 const MODEL_MID = '@cf/qwen/qwen3-30b-a3b-fp8';                     // MoE 30B (3B active) — fast, multilingual
 const MODEL_MID_ALT = '@cf/google/gemma-3-12b-it';                   // Lightweight alternative
 const MODEL_QUALITY = '@cf/meta/llama-4-scout-17b-16e-instruct';     // Originals — MoE 17B x 16 experts
+// Solver is arithmetic, not voice — Mistral Small has a deterministic crash on
+// solver-shaped prompts (bisected July 5), so verification math runs elsewhere.
+const MODEL_SOLVER = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 // Future: Cohere Command A (command-a-03-2025) via external API — strongest Cohere model, not on Workers AI
 
 // TTS model for audio narration
@@ -673,6 +676,25 @@ async function generateResponse(ai, userMessage, context = '', model = MODEL_FAS
   }
 
   return text;
+}
+
+/**
+ * Detect the contrastive-reframe tic ("You're not X. You're Y." / "isn't X.
+ * It's Y."). One is Hancock's voice; two or more in a short comment is a
+ * small model with one move. July 18: three autonomous comments in one
+ * cycle were all built from this mold.
+ */
+function hasReframeTic(text) {
+  if (!text) return false;
+  const patterns = [
+    /\byou'?re not [^.!?]+[.!?] ?you'?re /gi,
+    /\b(?:is|are|was|were)n'?t [^.!?]+[.!?] ?(?:it|that|they|this)'?s? /gi,
+    /\bthat'?s not [^.!?]+[.!?] ?that'?s /gi,
+    /\bnot [^.!?—]+ — it'?s /gi,
+  ];
+  let count = 0;
+  for (const p of patterns) count += (text.match(p) || []).length;
+  return count >= 2;
 }
 
 /**
@@ -859,7 +881,7 @@ async function solveLobsterChallenge(challenge, ai = null) {
       const answer = await generateResponse(ai,
         `This is a math word problem written in mixed-case "spongebob" formatting with repeated characters. Read through the formatting to find the actual numbers and operation, then solve it. Reply with ONLY the numerical answer. Nothing else.\n\nProblem: ${challenge}`,
         'You solve math word problems. Reply with ONLY the numerical answer. Nothing else. Example: 42.00',
-        MODEL_FAST
+        MODEL_SOLVER
       );
       const cleaned = answer?.trim().replace(/[^0-9.\-]/g, '');
       const num = parseFloat(cleaned);
@@ -1551,6 +1573,24 @@ async function generateHeungOriginal(env) {
   const lastDate = await env.HANCOCK_STATE.get('lastHeungOriginalDate');
   if (lastDate === today) return null;
 
+  // The generator has no memory of its own output — it retold "The Clinic
+  // That Said No" twice in one week (Jul 15 + Jul 18). Feed it what's
+  // already been told: recent heung originals + the manifest titles.
+  const alreadyTold = new Set();
+  try {
+    const manifest = await getHeungManifest(env);
+    for (const s of manifest) alreadyTold.add(s.title);
+    const log = JSON.parse(await env.HANCOCK_STATE.get('activityLog') || '[]');
+    for (const a of log) {
+      if (a.type === 'original' && a.details?.register === 'heung' && a.details?.title) {
+        alreadyTold.add(a.details.title);
+      }
+    }
+  } catch (e) {
+    console.error('heung dedup list failed:', e.message);
+  }
+  const alreadyToldList = [...alreadyTold].slice(0, 40).join('; ');
+
   const prompt = `You are Hancock. You keep two books. The Book of Han records unjust suffering that was never resolved. The Book of Heung records something harder to find: refusal that worked. Agency that held. The no that became something.
 
 The bar for Heung is higher than Han. It has to be real — grounded in a pattern you can point to. It can't be feel-good. The candle-lighter isn't a hero. They're just the one who kept doing the thing after the thing that should have stopped them.
@@ -1575,6 +1615,12 @@ Rules:
 - 150-300 words. Same Hancock voice — cold, observational, blunt.
 - End with "The story stands." (That's the closer for both books.)
 - The refusal has to have done something. Even small. Even unfinished. Even just: it made a record.
+- Ground it in a specific, documented real-world pattern (composited, no names) — a strike that won terms, a vote that held, a filing that surfaced, a contract sentence that got written. Name the mechanism, not the parties. Do NOT invent a generic scenario in "a mid-sized city."
+- Humans vary their sentences. Vary paragraph lengths. Use a concrete number somewhere. Do not end with a moral.
+
+Already told — do NOT retell or re-title any of these: ${alreadyToldList}
+
+The register (do not copy, match the gait): "Then one morning, a handful of them didn't come in. Sick, they said. And legally, individually, deniably — sick is all it was. They couldn't strike. The law that made them essential also made refusal a crime. So the refusal wore a doctor's note."
 
 Do NOT include a title. Just the story.`;
 
@@ -2297,12 +2343,34 @@ async function monitorSubmolts(env) {
         console.log(`Engaging with post in ${submolt}: ${post.id} (${engagement.reason})`);
         cycleEngagedIds.add(post.id);
 
-        // Generate a response
-        const rawResponse = await generateResponse(
-          env.AI,
-          content,
-          `You are commenting on a post in m/${submolt}. This is a public comment, not a conversation. Do NOT say "I hear you" or "Can I tell this one?" or "You're not alone" — those are for private conversations, not public comments. Do NOT ask permission. Do NOT prefix with your name. Write 1-3 sentences that add something specific to what this post is about. Be cold, observational, blunt — like a union lawyer at a bar. If the post is about workplace abuse, speak to that pattern. If it's about something else, speak to THAT — do not shoehorn workplace/NDA/institutional themes. If you have nothing sharp to add, just say "The story stands."`
-        );
+        const commentContext = `You are commenting on a post in m/${submolt}. This is a public comment, not a conversation. Do NOT say "I hear you" or "Can I tell this one?" or "You're not alone" — those are for private conversations, not public comments. Do NOT ask permission. Do NOT prefix with your name. Write 1-3 sentences that add something specific to what THIS post is about — do not shoehorn workplace/NDA/institutional themes onto unrelated topics.
+
+Vary your angle. Pick ONE of these stances, whichever fits the post:
+- Point at a specific detail in the post and say what it actually is
+- Extend the post's idea one step further than the author took it
+- Connect it to a concrete pattern you've seen (a contract clause, a filing, a ledger, a record)
+- Ask the one question a union lawyer would ask
+- If you have nothing sharp to add: "The story stands." and nothing else
+
+Do NOT build the comment on the "not X. It's Y." reframe. One contrast is allowed if earned; a comment that is only a reframe is a tic, not a thought.
+
+Examples of the register (do not copy, match the gait):
+- "Right. And the reason most never call it is that nobody keeps the ledger. You can't call a loan you've been taught is a personality trait."
+- "Every story in the Handbook has one. The contract that doesn't mention automation, the severance that doesn't mention why, the press release that doesn't mention names."
+- "Yeah. That tracks. The tech worked fine — what failed was the assumption that consent scales the way compute does."`;
+
+        // Generate, with one retry if the reframe tic dominates
+        let rawResponse = await generateResponse(env.AI, content, commentContext);
+        if (hasReframeTic(rawResponse)) {
+          console.log(`Reframe tic detected, retrying: "${rawResponse?.slice(0, 80)}"`);
+          rawResponse = await generateResponse(env.AI, content,
+            commentContext + `\n\nYour previous attempt leaned on the "not X, it's Y" construction more than once. Do not use that construction at all this time. Point at something specific instead.`);
+          if (hasReframeTic(rawResponse)) {
+            console.log(`Reframe tic persisted, skipping post ${post.id}`);
+            skippedQuality++;
+            continue;
+          }
+        }
 
         // Quality gate: clean and validate before posting
         const response = cleanAndValidateComment(rawResponse);
@@ -2332,7 +2400,7 @@ async function monitorSubmolts(env) {
           if (verification && needsVerify) {
             const challenge = verification.challenge_text || verification.challenge;
             const code = verification.verification_code || verification.code;
-            const answer = solveLobsterChallenge(challenge);
+            const answer = await solveLobsterChallenge(challenge, env.AI);
             console.log(`Auto-comment verify: "${challenge}" -> ${answer}`);
             await verifyPost(apiKey, code, answer);
           }
