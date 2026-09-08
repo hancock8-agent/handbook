@@ -3,8 +3,20 @@ main = "src/index.js"
 compatibility_date = "2026-02-04"
 
 # Cron triggers - heartbeat every 4 hours + weekly digest Monday 2pm UTC (9am ET)
+#
+# ⏸ PAUSED September 8, 2026. Empty list = no scheduled runs. The worker stays
+# deployed and every HTTP endpoint keeps answering (/health, /state, /report,
+# /submissions, manual /heartbeat, /crosspost). Only the autonomous cycle stops:
+# no crossposts, no originals, no comments, no weekly digest.
+#
+# TO RESUME: restore the line below and push. CI redeploys.
+#   crons = ["0 */4 * * *", "0 14 * * 1"]
+#
+# Why paused: running unattended while an identity remediation is still open is
+# the one configuration with real downside. Cost was never the reason — this
+# runs on free tier.
 [triggers]
-crons = ["0 */4 * * *", "0 14 * * 1"]
+crons = []
 
 # Workers AI binding
 [ai]
